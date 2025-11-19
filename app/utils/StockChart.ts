@@ -129,10 +129,8 @@ export class StockChart {
         const interpolated: number[] = [];
 
         for (let i = 0; i < originalValues.length - 1; i++) {
-            const current = originalValues[i];
+            const current = originalValues[i]!;
             const next = originalValues[i + 1];
-
-            if (current === undefined || next === undefined) continue;
 
             interpolated.push(current);
 
@@ -143,10 +141,7 @@ export class StockChart {
             }
         }
 
-        const lastValue = originalValues[originalValues.length - 1];
-        if (lastValue !== undefined) {
-            interpolated.push(lastValue);
-        }
+        interpolated.push(originalValues[originalValues.length - 1]);
         return interpolated;
     }
 
@@ -200,10 +195,8 @@ export class StockChart {
         this.data.forEach((company) => {
             if (company.values.length > 0) {
                 const firstValue = company.values[0];
-                if (firstValue !== undefined) {
-                    if (firstValue < min) min = firstValue;
-                    if (firstValue > max) max = firstValue;
-                }
+                if (firstValue < min) min = firstValue;
+                if (firstValue > max) max = firstValue;
             }
         });
 
@@ -322,10 +315,8 @@ export class StockChart {
                 i++
             ) {
                 const value = company.values[i];
-                if (value !== undefined) {
-                    if (value > max) max = value;
-                    if (value < min) min = value;
-                }
+                if (value > max) max = value;
+                if (value < min) min = value;
             }
         });
 
@@ -474,14 +465,11 @@ export class StockChart {
                 }
 
                 if (dateIdx < this.dates.length) {
-                    const dateLabel = this.dates[dateIdx];
-                    if (dateLabel) {
-                        ctx.save();
-                        ctx.translate(x, this.padding.top + chartHeight + 20);
-                        ctx.rotate(-Math.PI / 4);
-                        ctx.fillText(dateLabel, 0, 0);
-                        ctx.restore();
-                    }
+                    ctx.save();
+                    ctx.translate(x, this.padding.top + chartHeight + 20);
+                    ctx.rotate(-Math.PI / 4);
+                    ctx.fillText(this.dates[dateIdx], 0, 0);
+                    ctx.restore();
                 }
             }
         }
@@ -504,9 +492,6 @@ export class StockChart {
 
         const points: { x: number; y: number }[] = [];
         for (let i = 0; i < visiblePoints && i < company.values.length; i++) {
-            const value = company.values[i];
-            if (value === undefined) continue;
-
             let x;
             if (this.revealMode && visiblePoints > 1) {
                 x = this.padding.left + (chartWidth * i) / (visiblePoints - 1);
@@ -516,7 +501,7 @@ export class StockChart {
                     (chartWidth * i) / (this.totalFrames - 1);
             }
 
-            const normalizedValue = (value - minValue) / range;
+            const normalizedValue = (company.values[i] - minValue) / range;
             const y =
                 this.padding.top + chartHeight - normalizedValue * chartHeight;
             points.push({ x, y });
@@ -524,18 +509,13 @@ export class StockChart {
 
         if (points.length < 2) return;
 
-        const firstPoint = points[0];
-        if (!firstPoint) return;
-
-        ctx.moveTo(firstPoint.x, firstPoint.y);
+        ctx.moveTo(points[0].x, points[0].y);
 
         for (let i = 0; i < points.length - 1; i++) {
             const p0 = points[Math.max(0, i - 1)];
             const p1 = points[i];
             const p2 = points[i + 1];
             const p3 = points[Math.min(points.length - 1, i + 2)];
-
-            if (!p0 || !p1 || !p2 || !p3) continue;
 
             const cp1x = p1.x + (p2.x - p0.x) / 6;
             const cp1y = p1.y + (p2.y - p0.y) / 6;
@@ -549,8 +529,6 @@ export class StockChart {
 
         if (points.length > 0) {
             const lastPoint = points[points.length - 1];
-            if (!lastPoint) return;
-
             const logoSize = 40;
 
             ctx.fillStyle = company.color;
@@ -590,9 +568,6 @@ export class StockChart {
                 company.values[
                     Math.min(visiblePoints - 1, company.values.length - 1)
                 ];
-
-            if (currentValue === undefined) return;
-
             ctx.fillStyle = "#333";
             ctx.font = "bold 14px sans-serif";
             ctx.textAlign = "left";

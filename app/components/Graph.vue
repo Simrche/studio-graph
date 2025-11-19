@@ -83,7 +83,8 @@ onMounted(async () => {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 100%;
     background: white;
     border-radius: 1rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
