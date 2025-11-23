@@ -167,14 +167,12 @@
                         ></path>
                     </svg>
                     Lignes
+                    <span v-if="tickers.length > 0" class="ticker-count"
+                        >({{ tickers.length }})</span
+                    >
                 </h2>
 
                 <div class="search-wrapper">
-                    <input
-                        type="text"
-                        placeholder="Ajouter un ticker..."
-                        class="search-input"
-                    />
                     <svg
                         class="search-icon"
                         fill="currentColor"
@@ -184,81 +182,108 @@
                             d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
                         ></path>
                     </svg>
+                    <input
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Ajouter un ticker..."
+                        class="search-input"
+                        @focus="showSearchResults = true"
+                    />
+
+                    <!-- Dropdown de résultats de recherche -->
+                    <Transition name="dropdown">
+                        <div
+                            v-if="showSearchResults && searchQuery.length >= 2"
+                            class="search-results"
+                        >
+                            <div v-if="isSearching" class="search-state">
+                                <div class="loading-spinner"></div>
+                                <span>Recherche...</span>
+                            </div>
+                            <div
+                                v-else-if="searchResults.length === 0"
+                                class="search-state"
+                            >
+                                <svg
+                                    class="empty-icon"
+                                    fill="currentColor"
+                                    viewBox="0 0 256 256"
+                                >
+                                    <path
+                                        d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"
+                                    ></path>
+                                </svg>
+                                Aucun résultat
+                            </div>
+                            <div v-else class="results-container">
+                                <div
+                                    v-for="ticker in searchResults"
+                                    :key="ticker.symbol"
+                                    class="search-result-item"
+                                    @click="addTicker(ticker)"
+                                >
+                                    <div class="result-content">
+                                        <div class="result-icon">
+                                            <span class="result-initials">
+                                                {{
+                                                    ticker.symbol
+                                                        ?.substring(0, 2)
+                                                        .toUpperCase()
+                                                }}
+                                            </span>
+                                        </div>
+                                        <div class="result-info">
+                                            <div class="result-symbol">
+                                                {{ ticker.symbol }}
+                                            </div>
+                                            <div class="result-name">
+                                                {{
+                                                    ticker.shortname ||
+                                                    ticker.longname ||
+                                                    ticker.symbol
+                                                }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <svg
+                                        class="result-add-icon"
+                                        fill="currentColor"
+                                        viewBox="0 0 256 256"
+                                    >
+                                        <path
+                                            d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm40-88a8,8,0,0,1-8,8H136v24a8,8,0,0,1-16,0V136H96a8,8,0,0,1,0-16h24V96a8,8,0,0,1,16,0v24h24A8,8,0,0,1,168,128Z"
+                                        ></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </Transition>
                 </div>
 
-                <div class="tickers-list">
-                    <!-- Ticker 1 -->
-                    <div class="ticker-item">
-                        <div class="ticker-logo">
-                            <span
-                                class="ticker-initials"
-                                style="background-color: #00205c"
-                                >AI</span
-                            >
-                        </div>
-                        <div class="ticker-info">
-                            <div class="ticker-symbol">AIR.PA</div>
-                            <div class="ticker-name">AIRBUS SE</div>
-                        </div>
-                        <div class="ticker-actions">
-                            <div class="color-picker-wrapper">
-                                <input
-                                    type="color"
-                                    value="#00205c"
-                                    class="color-input"
-                                />
-                                <div class="color-display">
-                                    <div
-                                        class="color-circle"
-                                        style="background-color: #00205c"
-                                    ></div>
-                                </div>
-                            </div>
-                            <button class="delete-btn">
-                                <svg fill="currentColor" viewBox="0 0 256 256">
-                                    <path
-                                        d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"
-                                    ></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+                <div v-if="tickers.length === 0" class="empty-state">
+                    <svg
+                        class="empty-state-icon"
+                        fill="currentColor"
+                        viewBox="0 0 256 256"
+                    >
+                        <path
+                            d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"
+                        ></path>
+                    </svg>
+                    <p class="empty-state-text">Aucun ticker sélectionné</p>
+                </div>
 
-                    <!-- Ticker 2 -->
-                    <div class="ticker-item">
-                        <div class="ticker-logo">
-                            <span
-                                class="ticker-initials"
-                                style="background-color: #e50914"
-                                >NE</span
-                            >
-                        </div>
-                        <div class="ticker-info">
-                            <div class="ticker-symbol">NFLX</div>
-                            <div class="ticker-name">Netflix Inc.</div>
-                        </div>
-                        <div class="ticker-actions">
-                            <div class="color-picker-wrapper">
-                                <input
-                                    type="color"
-                                    value="#e50914"
-                                    class="color-input"
-                                />
-                                <div class="color-display">
-                                    <div
-                                        class="color-circle"
-                                        style="background-color: #e50914"
-                                    ></div>
-                                </div>
-                            </div>
-                            <button class="delete-btn">
-                                <svg fill="currentColor" viewBox="0 0 256 256">
-                                    <path
-                                        d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"
-                                    ></path>
-                                </svg>
-                            </button>
-                        </div>
+                <div v-else class="tickers-list-wrapper">
+                    <div class="tickers-list">
+                        <TickerItem
+                            v-for="(ticker, index) in tickers"
+                            :key="ticker.symbol"
+                            :ticker="ticker"
+                            @remove="removeTicker(index)"
+                            @update-color="
+                                (color) => updateTickerColor(index, color)
+                            "
+                        />
                     </div>
                 </div>
             </section>
@@ -278,7 +303,129 @@
     </aside>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import type { TickerData } from "../types";
+import TickerItem from "./TickerItem.vue";
+
+// État réactif
+const searchQuery = ref("");
+const showSearchResults = ref(false);
+const searchResults = ref<any[]>([]);
+const isSearching = ref(false);
+const tickers = ref<TickerData[]>([]);
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// Fonction pour générer une couleur aléatoire
+const generateRandomColor = () => {
+    return (
+        "#" +
+        Math.floor(Math.random() * 16777215)
+            .toString(16)
+            .padStart(6, "0")
+    );
+};
+
+// Watcher pour la recherche avec debounce
+watch(searchQuery, (newQuery) => {
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+
+    if (newQuery.length < 2) {
+        searchResults.value = [];
+        showSearchResults.value = false;
+        return;
+    }
+
+    isSearching.value = true;
+    showSearchResults.value = true;
+
+    searchTimeout = setTimeout(async () => {
+        try {
+            const response = await $fetch("/api/get-tickers", {
+                params: { search: newQuery },
+            });
+
+            searchResults.value = (response as any).quotes || [];
+            isSearching.value = false;
+        } catch (error) {
+            console.error("Erreur lors de la recherche:", error);
+            searchResults.value = [];
+            isSearching.value = false;
+        }
+    }, 500);
+});
+
+// Fonction pour ajouter un ticker
+const addTicker = async (tickerResult: any) => {
+    const symbol = tickerResult.symbol;
+    const name = tickerResult.shortname || tickerResult.longname || symbol;
+
+    // Vérifier si le ticker n'est pas déjà ajouté
+    if (tickers.value.some((t: TickerData) => t.symbol === symbol)) {
+        alert("Ce ticker est déjà dans la liste !");
+        return;
+    }
+
+    // Masquer les résultats et réinitialiser la recherche
+    showSearchResults.value = false;
+    searchQuery.value = "";
+
+    // Générer une couleur aléatoire
+    const color = generateRandomColor();
+
+    try {
+        // Récupérer le logo
+        const logoData = await $fetch("/api/get-ticker-logo", {
+            params: { symbol },
+        });
+
+        tickers.value.push({
+            symbol,
+            name,
+            color,
+            logoUrl: (logoData as any)?.logoUrl || null,
+        });
+    } catch (error) {
+        console.error("Erreur lors de la récupération du logo:", error);
+        // Ajouter quand même le ticker sans logo
+        tickers.value.push({
+            symbol,
+            name,
+            color,
+            logoUrl: null,
+        });
+    }
+};
+
+// Fonction pour supprimer un ticker
+const removeTicker = (index: number) => {
+    tickers.value.splice(index, 1);
+};
+
+// Fonction pour mettre à jour la couleur d'un ticker
+const updateTickerColor = (index: number, color: string) => {
+    if (tickers.value[index]) {
+        tickers.value[index].color = color;
+    }
+};
+
+// Fermer les résultats de recherche quand on clique ailleurs
+const handleClickOutside = (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (!target.closest(".search-wrapper")) {
+        showSearchResults.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener("click", handleClickOutside);
+});
+</script>
 
 <style scoped>
 /* Sidebar */
@@ -319,7 +466,7 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 200px 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -367,6 +514,12 @@
 .section-icon {
     width: 1rem;
     height: 1rem;
+}
+
+.ticker-count {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    font-weight: normal;
 }
 
 /* Controls */
@@ -595,74 +748,407 @@
 
 .search-wrapper {
     position: relative;
+    z-index: 10;
 }
 
 .search-input {
     width: 100%;
-    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    padding: 0.625rem 1rem 0.625rem 2.75rem;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 0.75rem;
     color: white;
     font-size: 0.875rem;
+    font-weight: 500;
     outline: none;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
 }
 
 .search-input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.search-input:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(168, 85, 247, 0.3);
 }
 
 .search-input:focus {
+    background: rgba(255, 255, 255, 0.1);
     border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
 }
 
 .search-icon {
     position: absolute;
-    left: 0.75rem;
+    left: 0.875rem;
     top: 50%;
     transform: translateY(-50%);
-    width: 1rem;
-    height: 1rem;
-    color: rgba(255, 255, 255, 0.3);
+    width: 1.125rem;
+    height: 1.125rem;
+    color: rgba(168, 85, 247, 0.5);
+    transition: color 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
 }
 
-/* Tickers List */
-.tickers-list {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-right: 0.5rem;
-    min-height: 0;
+.search-wrapper:has(.search-input:focus) .search-icon {
+    color: #a855f7;
 }
 
-.ticker-item {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+/* Search Results Dropdown */
+.search-results {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(168, 85, 247, 0.2);
     border-radius: 0.75rem;
-    padding: 0.75rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.1);
+    max-height: 16rem;
+    overflow: hidden;
+    z-index: 50;
+}
+
+.results-container {
+    max-height: 16rem;
+    overflow-y: auto;
+}
+
+.results-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.results-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.results-container::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.3);
+    border-radius: 2px;
+}
+
+.results-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.5);
+}
+
+.search-state {
+    padding: 1.5rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-direction: column;
+}
+
+.loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(168, 85, 247, 0.2);
+    border-top-color: #a855f7;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.empty-icon {
+    width: 2rem;
+    height: 2rem;
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.search-result-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #a855f7, #ec4899);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.search-result-item:hover {
+    background: rgba(168, 85, 247, 0.1);
+}
+
+.search-result-item:hover::before {
+    opacity: 1;
+}
+
+.result-content {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    transition: all 0.2s;
+    flex: 1;
+    min-width: 0;
 }
 
-.ticker-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.ticker-logo {
-    width: 40px;
-    height: 40px;
+.result-icon {
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
-    background: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 10px rgba(168, 85, 247, 0.2);
+}
+
+.result-initials {
+    color: white;
+    font-weight: bold;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.result-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.result-symbol {
+    color: white;
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.result-name {
+    color: #c4b5fd;
+    font-size: 0.75rem;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+.result-add-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #a855f7;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.2s, transform 0.2s;
+    flex-shrink: 0;
+}
+
+.search-result-item:hover .result-add-icon {
+    opacity: 1;
+    transform: scale(1);
+    color: #c084fc;
+}
+
+/* Dropdown animation */
+.dropdown-enter-active,
+.dropdown-leave-active {
+    transition: all 0.3s ease;
+}
+
+.dropdown-enter-from {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.dropdown-leave-to {
+    opacity: 0;
+    transform: translateY(-5px);
+}
+
+/* Ticker Logo Image */
+.ticker-logo-container {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ticker-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.ticker-logo-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* List transitions for tickers */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.3s ease;
+}
+
+.list-enter-from {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.list-leave-active {
+    position: absolute;
+    width: 100%;
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    gap: 1rem;
+    background: rgba(168, 85, 247, 0.03);
+    border: 2px dashed rgba(168, 85, 247, 0.2);
+    border-radius: 0.75rem;
+    animation: pulse-border 3s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+    0%,
+    100% {
+        border-color: rgba(168, 85, 247, 0.2);
+    }
+    50% {
+        border-color: rgba(168, 85, 247, 0.35);
+    }
+}
+
+.empty-state-icon {
+    width: 3rem;
+    height: 3rem;
+    color: rgba(168, 85, 247, 0.3);
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.empty-state-text {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: center;
+    margin: 0;
+}
+
+/* Tickers List */
+.tickers-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 1rem;
+}
+
+.tickers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding-right: 0.5rem;
+}
+
+.tickers-list-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tickers-list-wrapper::-webkit-scrollbar-track {
+    background: rgba(168, 85, 247, 0.05);
+    border-radius: 3px;
+}
+
+.tickers-list-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.3);
+    border-radius: 3px;
+}
+
+.tickers-list-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.5);
+}
+
+.ticker-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(168, 85, 247, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.ticker-item::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(168, 85, 247, 0.05) 0%,
+        rgba(236, 72, 153, 0.05) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.ticker-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(168, 85, 247, 0.3);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+}
+
+.ticker-item:hover::before {
+    opacity: 1;
 }
 
 .ticker-initials {
@@ -673,42 +1159,50 @@
     justify-content: center;
     color: white;
     font-weight: bold;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
 }
 
 .ticker-info {
     flex: 1;
     min-width: 0;
+    position: relative;
+    z-index: 1;
 }
 
 .ticker-symbol {
     color: white;
-    font-weight: bold;
+    font-weight: 700;
     font-size: 0.875rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: 0.5px;
 }
 
 .ticker-name {
-    color: #d8b4fe;
+    color: #c4b5fd;
     font-size: 0.75rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    margin-top: 2px;
+    opacity: 0.9;
 }
 
 .ticker-actions {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 1;
 }
 
 /* Color Picker */
 .color-picker-wrapper {
     position: relative;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
 }
 
 .color-input {
@@ -718,48 +1212,64 @@
     height: 100%;
     opacity: 0;
     cursor: pointer;
+    z-index: 2;
 }
 
 .color-display {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .color-display:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(168, 85, 247, 0.4);
+    transform: scale(1.05);
 }
 
 .color-circle {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.color-display:hover .color-circle {
+    transform: scale(1.1);
 }
 
 /* Delete Button */
 .delete-btn {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 0.5rem;
-    background: rgba(239, 68, 68, 0.1);
-    border: none;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
     color: #fca5a5;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
 }
 
 .delete-btn:hover {
     background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
+    transform: scale(1.05);
+}
+
+.delete-btn:active {
+    transform: scale(0.95);
 }
 
 .delete-btn svg {
