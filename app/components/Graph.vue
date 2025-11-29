@@ -43,7 +43,7 @@ const legendData = ref<Array<{ name: string; logo: string; color: string }>>(
 );
 
 onMounted(async () => {
-    if (!canvas.value) return;
+    if (!canvas.value || (true as boolean)) return;
 
     // Créer l'instance du graphique
     chart = new StockChart("graphCanvas");

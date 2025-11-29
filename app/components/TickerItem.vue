@@ -103,7 +103,6 @@ const handleColorChange = (e: Event) => {
 .ticker-item:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(168, 85, 247, 0.3);
-    transform: translateX(4px);
     box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
 }
 
