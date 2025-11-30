@@ -160,6 +160,8 @@ class GenerateGraphJsonService {
         // Créer une map des données existantes (par début de semaine)
         const dataMap = new Map<string, number | null>();
         historicalData.quotes.forEach((point) => {
+            // Ignorer les quotes avec un champ close null
+            if (point.close === null || point.close === undefined) return;
             const weekStart = datesService.getWeekStart(new Date(point.date));
             const weekKey = datesService.formatDate(weekStart);
             dataMap.set(weekKey, point.close);
