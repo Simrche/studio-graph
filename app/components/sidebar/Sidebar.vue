@@ -69,16 +69,7 @@ import {
 } from "@phosphor-icons/vue";
 import type { GraphConfig } from "~/types";
 
-const config = ref<GraphConfig>({
-    animation: {
-        speed: 0.5,
-        revealMode: true,
-    },
-    data: {
-        displayMode: "percentage" as "percentage" | "price" | "initialAmount",
-        startDate: "2023-01-01",
-        initialAmount: 1000,
-    },
-    tickers: [],
+const config = defineModel<GraphConfig>({
+    required: true,
 });
 </script>

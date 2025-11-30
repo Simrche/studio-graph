@@ -1,10 +1,14 @@
 <template>
-    <div class="studio-page">
-        <Sidebar />
+    <div
+        class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden"
+    >
+        <Sidebar v-model="config" />
 
         <!-- Main Canvas Area -->
-        <main class="main-content">
-            <div class="graph-section">
+        <main
+            class="flex-1 p-8 flex flex-col items-center justify-center min-w-0 overflow-auto"
+        >
+            <div class="w-full max-w-full flex justify-center items-center">
                 <Graph />
             </div>
         </main>
@@ -14,35 +18,18 @@
 </template>
 
 <script setup lang="ts">
-import Graph from "~/components/Graph.vue";
-import Sidebar from "~/components/sidebar/Sidebar.vue";
+import type { GraphConfig } from "~/types";
+
+const config = ref<GraphConfig>({
+    animation: {
+        speed: 0.5,
+        revealMode: true,
+    },
+    data: {
+        displayMode: "percentage" as "percentage" | "price" | "initialAmount",
+        startDate: "2023-01-01",
+        initialAmount: 1000,
+    },
+    tickers: [],
+});
 </script>
-
-<style scoped>
-.studio-page {
-    min-height: 100vh;
-    background: linear-gradient(to bottom right, #0f172a, #581c87, #0f172a);
-    display: flex;
-    overflow: hidden;
-}
-
-/* Main Content */
-.main-content {
-    flex: 1;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    overflow: auto;
-}
-
-.graph-section {
-    width: 100%;
-    max-width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-</style>
