@@ -7,7 +7,6 @@
         </label>
         <div class="relative w-12 h-6">
             <input
-                :id="id"
                 type="checkbox"
                 :checked="modelValue"
                 @change="
@@ -37,7 +36,6 @@ defineEmits<{
     "update:modelValue": [value: boolean];
 }>();
 
-const id = computed(
-    () => props.id || `toggle-${Math.random().toString(36).substr(2, 9)}`
-);
+const generatedId = useId();
+const id = computed(() => props.id || `toggle-${generatedId}`);
 </script>
