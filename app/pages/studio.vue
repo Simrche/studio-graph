@@ -15,7 +15,7 @@
             class="flex-1 p-8 flex flex-col items-center justify-center min-w-0 overflow-auto"
         >
             <div class="w-full max-w-full flex justify-center items-center">
-                <Graph ref="graphRef" :config="appliedConfig" />
+                <Graph ref="graphRef" v-model:config="appliedConfig" />
             </div>
         </main>
 

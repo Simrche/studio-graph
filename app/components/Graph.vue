@@ -40,6 +40,18 @@
             </div>
         </div>
 
+        <!-- Graph Controls - visible seulement si des données sont chargées -->
+        <GraphControls
+            v-if="!isLoading && config.tickers.length > 0"
+            :is-playing="isAnimating"
+            :animation-speed="config.animation.speed"
+            :reveal-mode="config.animation.revealMode"
+            @toggle-play-pause="handleTogglePlayPause"
+            @restart="handleRestart"
+            @speed-change="handleSpeedChange"
+            @reveal-mode-change="handleRevealModeChange"
+        />
+
         <!-- Canvas - toujours présent dans le DOM, caché si nécessaire -->
         <div
             class="canvas-wrapper"
@@ -89,9 +101,9 @@ import type { GraphConfig } from "~/types";
 import { StockChart } from "~/utils/StockChart";
 import { graphDataService } from "~/utils/graphDataService";
 
-const props = defineProps<{
-    config: GraphConfig;
-}>();
+const config = defineModel<GraphConfig>("config", {
+    required: true,
+});
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const isLoading = ref(true);
@@ -128,6 +140,48 @@ const checkAnimationState = () => {
     }
 };
 
+// Gérer le play/pause
+function handleTogglePlayPause() {
+    if (!chart) return;
+
+    if (isAnimating.value) {
+        chart.pauseAnimation();
+        isAnimating.value = false;
+    } else {
+        // Si l'animation est terminée, on relance au lieu de reprendre
+        if (chart.currentFrame >= chart.totalFrames) {
+            chart.restartAnimation();
+        } else {
+            chart.resumeAnimation();
+        }
+        isAnimating.value = true;
+        checkAnimationState();
+    }
+}
+
+// Gérer le restart
+const handleRestart = () => {
+    restart();
+};
+
+// Gérer le changement de vitesse
+function handleSpeedChange(speed: number) {
+    if (chart) {
+        chart.setAnimationSpeed(speed);
+    }
+    // Mettre à jour la config
+    config.value.animation.speed = speed;
+}
+
+// Gérer le changement de mode révélation
+function handleRevealModeChange(revealMode: boolean) {
+    if (chart) {
+        chart.setRevealMode(revealMode);
+    }
+    // Mettre à jour la config
+    config.value.animation.revealMode = revealMode;
+}
+
 defineExpose({
     reload,
     restart,
@@ -136,7 +190,7 @@ defineExpose({
 
 const initializeGraph = async () => {
     // Si aucun ticker n'est sélectionné, ne pas charger
-    if (props.config.tickers.length === 0) {
+    if (config.value.tickers.length === 0) {
         isLoading.value = false;
         return;
     }
@@ -154,13 +208,13 @@ const initializeGraph = async () => {
     try {
         // Créer l'instance du graphique
         chart = new StockChart("graphCanvas", {
-            animationSpeed: props.config.animation.speed,
-            revealMode: props.config.animation.revealMode,
+            animationSpeed: config.value.animation.speed,
+            revealMode: config.value.animation.revealMode,
         });
 
         // Calculer les données à partir du JSON et de la config
         const processedData = await graphDataService.loadAndProcessData(
-            props.config
+            config.value
         );
 
         // Charger les données dans le chart

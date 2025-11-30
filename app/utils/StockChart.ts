@@ -423,6 +423,26 @@ export class StockChart {
         this.startAnimation();
     }
 
+    pauseAnimation() {
+        this.isAnimating = false;
+    }
+
+    resumeAnimation() {
+        if (this.currentFrame < this.totalFrames) {
+            this.isAnimating = true;
+            this.animate();
+        }
+    }
+
+    setAnimationSpeed(speed: number) {
+        this.animationSpeed = speed;
+    }
+
+    setRevealMode(revealMode: boolean) {
+        this.revealMode = revealMode;
+        this.draw();
+    }
+
     animate() {
         if (!this.isAnimating) return;
 
