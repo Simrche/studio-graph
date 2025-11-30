@@ -45,13 +45,13 @@
         <div class="p-6 border-t border-white/10 bg-black/20">
             <UiButton
                 variant="active"
-                :disabled="!hasChanges && !canRestart"
-                @click="hasChanges ? $emit('reload') : $emit('restart')"
+                :disabled="!hasChanges"
+                @click="$emit('apply')"
             >
                 <template #icon>
-                    <PhArrowsClockwise :size="20" weight="fill" />
+                    <PhCheck :size="20" weight="bold" />
                 </template>
-                Relancer
+                Appliquer
             </UiButton>
         </div>
     </aside>
@@ -61,7 +61,7 @@
 import {
     PhSlidersHorizontal,
     PhTrendUp,
-    PhArrowsClockwise,
+    PhCheck,
 } from "@phosphor-icons/vue";
 import type { GraphConfig } from "~/types";
 
@@ -71,11 +71,9 @@ const config = defineModel<GraphConfig>({
 
 defineProps<{
     hasChanges: boolean;
-    canRestart: boolean;
 }>();
 
 defineEmits<{
-    reload: [];
-    restart: [];
+    apply: [];
 }>();
 </script>

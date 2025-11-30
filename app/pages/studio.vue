@@ -5,9 +5,7 @@
         <Sidebar
             v-model="config"
             :has-changes="hasChanges"
-            :can-restart="canRestart"
-            @reload="handleReload"
-            @restart="handleRestart"
+            @apply="handleApply"
         />
 
         <!-- Main Canvas Area -->
@@ -15,7 +13,7 @@
             class="flex-1 p-8 flex flex-col items-center justify-center min-w-0 overflow-auto"
         >
             <div class="w-full max-w-full flex justify-center items-center">
-                <Graph ref="graphRef" v-model:config="appliedConfig" />
+                <Graph ref="graphRef" v-model:config="config" />
             </div>
         </main>
 
@@ -59,33 +57,18 @@ const config = ref<GraphConfig>({
     ],
 });
 
-// Configuration appliquée au graphique
-const appliedConfig = ref<GraphConfig>(
-    JSON.parse(JSON.stringify(config.value))
-);
+// Utiliser la composable pour détecter les modifications
+const { modified: hasChanges, resetInitial } = useModification(() => ({
+    ...config.value.data,
+    ...config.value.tickers,
+}));
 
-// Détecter si des changements ont été apportés
-const hasChanges = computed(() => {
-    return JSON.stringify(config.value) !== JSON.stringify(appliedConfig.value);
-});
-
-// Détecter si on peut relancer (animation terminée + pas de changements)
-const canRestart = computed(() => {
-    return !hasChanges.value && appliedConfig.value.tickers.length > 0;
-});
-
-// Gérer le rechargement du graphique
-const handleReload = async () => {
-    appliedConfig.value = JSON.parse(JSON.stringify(config.value));
+// Gérer l'application des modifications
+async function handleApply() {
     if (graphRef.value) {
         await graphRef.value.reload();
+        // Réinitialiser l'état initial après le rechargement réussi
+        resetInitial();
     }
-};
-
-// Gérer le redémarrage de l'animation
-const handleRestart = () => {
-    if (graphRef.value) {
-        graphRef.value.restart();
-    }
-};
+}
 </script>

@@ -26,15 +26,19 @@
         </div>
         <div class="relative z-[1] min-w-0 flex-1">
             <div
-                class="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-bold tracking-wide text-white"
+                class="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-bold tracking-wide text-white cursor-default select-none"
             >
                 {{ ticker.symbol }}
             </div>
-            <div
-                class="mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-violet-300 opacity-90"
-            >
-                {{ ticker.name }}
-            </div>
+            <input
+                v-model="ticker.name"
+                type="text"
+                class="w-full mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-violet-300 opacity-90 bg-transparent border-0 border-b border-b-violet-300/20 outline-none focus:outline-none focus:border-b-violet-300/60 placeholder:text-violet-300/40 transition-colors duration-200 pb-0.5"
+                placeholder="Nom du ticker"
+                @focus="handleFocus"
+                @blur="handleBlur"
+                @keydown.enter="handleBlur"
+            />
         </div>
         <div class="relative z-[1] flex items-center gap-2">
             <UiColorPicker v-model="ticker.color" />
@@ -60,4 +64,12 @@ defineEmits<{
 }>();
 
 const logoError = ref(false);
+
+function handleFocus() {
+    // Optionnel: logique lors du focus
+}
+
+function handleBlur(event: Event) {
+    (event.target as HTMLInputElement).blur();
+}
 </script>
