@@ -128,8 +128,6 @@ const searchTickers = async (searchQuery: string) => {
 
         results.value = response.quotes || [];
     } catch (error) {
-        console.error("Erreur lors de la recherche:", error);
-
         results.value = [];
     } finally {
         isSearching.value = false;

@@ -36,7 +36,6 @@ class GenerateGraphJsonService {
                 const historicalData = await $fetch<ChartResultArray>(
                     `/api/get-ticker-historical-data?symbol=${ticker.symbol}&start=${start}&end=${end}`
                 );
-                console.log(historicalData);
                 let interpolatedData = this.interpolateWeeklyData(
                     allWeeks,
                     historicalData

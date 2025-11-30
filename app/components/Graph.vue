@@ -70,7 +70,11 @@
                             backgroundColor: company.color,
                         }"
                     >
-                        <img :src="company.logo" :alt="company.name" />
+                        <img
+                            :src="company.logo"
+                            :alt="company.name"
+                            @error="(e) => (e.target as HTMLImageElement).style.display = 'none'"
+                        />
                     </div>
                     <span class="legend-name">{{ company.name }}</span>
                 </div>
