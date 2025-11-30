@@ -6,6 +6,7 @@ import type {
 } from "~/types";
 import { datesService } from "./datesService";
 import { $fetch } from "ofetch";
+import type { ChartResultArray } from "yahoo-finance2/modules/chart";
 
 interface HistoricalDataPoint {
     date: Date;
@@ -32,9 +33,10 @@ class GenerateGraphJsonService {
         // Récupérer les données pour chaque ticker
         const tickersDataMaps = await Promise.all(
             tickers.map(async (ticker) => {
-                const historicalData = await $fetch<HistoricalDataPoint[]>(
+                const historicalData = await $fetch<ChartResultArray>(
                     `/api/get-ticker-historical-data?symbol=${ticker.symbol}&start=${start}&end=${end}`
                 );
+                console.log(historicalData);
                 let interpolatedData = this.interpolateWeeklyData(
                     allWeeks,
                     historicalData
@@ -151,13 +153,13 @@ class GenerateGraphJsonService {
      */
     private interpolateWeeklyData(
         allWeeks: Date[],
-        historicalData: HistoricalDataPoint[]
+        historicalData: ChartResultArray
     ): Map<string, number> {
         const result = new Map<string, number>();
 
         // Créer une map des données existantes (par début de semaine)
-        const dataMap = new Map<string, number>();
-        historicalData.forEach((point) => {
+        const dataMap = new Map<string, number | null>();
+        historicalData.quotes.forEach((point) => {
             const weekStart = datesService.getWeekStart(new Date(point.date));
             const weekKey = datesService.formatDate(weekStart);
             dataMap.set(weekKey, point.close);

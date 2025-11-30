@@ -4,7 +4,9 @@
             'w-full px-4 py-3 rounded-xl font-medium transition-all duration-200',
             'flex items-center justify-center gap-2',
             variantClasses,
+            disabled && 'opacity-50 cursor-not-allowed',
         ]"
+        :disabled="disabled"
         @click="$emit('click')"
     >
         <slot name="icon"></slot>
@@ -15,6 +17,7 @@
 <script setup lang="ts">
 const props = defineProps<{
     variant?: "primary" | "secondary" | "active";
+    disabled?: boolean;
 }>();
 
 defineEmits<{
@@ -22,6 +25,10 @@ defineEmits<{
 }>();
 
 const variantClasses = computed(() => {
+    if (props.disabled) {
+        return "bg-white/5 border border-white/10 text-white/50";
+    }
+
     switch (props.variant) {
         case "primary":
             return "bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:scale-[1.02]";

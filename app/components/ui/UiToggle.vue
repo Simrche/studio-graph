@@ -7,6 +7,7 @@
         </label>
         <div class="relative w-12 h-6">
             <input
+                :id="id"
                 type="checkbox"
                 :checked="modelValue"
                 @change="

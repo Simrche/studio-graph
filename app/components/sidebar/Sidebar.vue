@@ -57,7 +57,18 @@
             </section>
         </div>
 
-        <SidebarSaveButton />
+        <div class="p-6 border-t border-white/10 bg-black/20">
+            <UiButton
+                variant="active"
+                :disabled="!hasChanges && !canRestart"
+                @click="hasChanges ? $emit('reload') : $emit('restart')"
+            >
+                <template #icon>
+                    <PhArrowsClockwise :size="20" weight="fill" />
+                </template>
+                Relancer
+            </UiButton>
+        </div>
     </aside>
 </template>
 
@@ -66,10 +77,21 @@ import {
     PhPlayCircle,
     PhSlidersHorizontal,
     PhTrendUp,
+    PhArrowsClockwise,
 } from "@phosphor-icons/vue";
 import type { GraphConfig } from "~/types";
 
 const config = defineModel<GraphConfig>({
     required: true,
 });
+
+defineProps<{
+    hasChanges: boolean;
+    canRestart: boolean;
+}>();
+
+defineEmits<{
+    reload: [];
+    restart: [];
+}>();
 </script>

@@ -19,6 +19,11 @@ export interface JsonData {
     investmentAmount?: number;
 }
 
+export interface StockChartOptions {
+    animationSpeed?: number;
+    revealMode?: boolean;
+}
+
 export class StockChart {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
@@ -49,7 +54,7 @@ export class StockChart {
     width = 0;
     height = 0;
 
-    constructor(canvasId: string) {
+    constructor(canvasId: string, options?: StockChartOptions) {
         const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         if (!canvas) throw new Error(`Canvas with id "${canvasId}" not found`);
 
@@ -58,14 +63,30 @@ export class StockChart {
         if (!ctx) throw new Error("Could not get 2D context");
         this.ctx = ctx;
 
+        if (options?.animationSpeed !== undefined) {
+            this.animationSpeed = options.animationSpeed;
+        }
+        if (options?.revealMode !== undefined) {
+            this.revealMode = options.revealMode;
+        }
+
         this.setupCanvas();
     }
 
     setupCanvas() {
-        const rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = rect.width * window.devicePixelRatio;
-        this.canvas.height = rect.height * window.devicePixelRatio;
-        this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const parent = this.canvas.parentElement;
+        if (!parent) return;
+
+        const rect = parent.getBoundingClientRect();
+        const dpr = window.devicePixelRatio;
+
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+
+        // Réinitialiser la transformation avant de réappliquer le scale
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        this.ctx.scale(dpr, dpr);
+
         this.width = rect.width;
         this.height = rect.height;
     }
@@ -79,6 +100,50 @@ export class StockChart {
         } catch (error) {
             console.error("Erreur de chargement:", error);
         }
+    }
+
+    /**
+     * Définit les données du graphique directement
+     */
+    setData(processedData: {
+        data: ChartData[];
+        dates: string[];
+        dataFormat: string;
+        investmentAmount: number;
+    }) {
+        this.dates = processedData.dates;
+        this.originalDataLength = this.dates.length;
+        this.dataFormat = processedData.dataFormat;
+        this.investmentAmount = processedData.investmentAmount;
+        this.data = [];
+        this.maxScale = -Infinity;
+        this.minScale = Infinity;
+
+        for (const company of processedData.data) {
+            const chartData: ChartData = {
+                name: company.name,
+                logo: company.logo,
+                color: company.color,
+                originalValues: company.originalValues,
+                values: [],
+            };
+
+            for (const numValue of company.originalValues) {
+                if (numValue > this.maxScale) {
+                    this.maxScale = numValue;
+                }
+                if (numValue < this.minScale) {
+                    this.minScale = numValue;
+                }
+            }
+
+            chartData.values = this.interpolateValues(chartData.originalValues);
+            this.data.push(chartData);
+        }
+
+        this.totalFrames =
+            (this.originalDataLength - 1) * this.interpolationSteps + 1;
+        this.calculateInitialScale();
     }
 
     parseJSON(jsonData: JsonData) {
@@ -352,6 +417,10 @@ export class StockChart {
         this.calculateInitialScale();
         this.isAnimating = true;
         this.animate();
+    }
+
+    restartAnimation() {
+        this.startAnimation();
     }
 
     animate() {
