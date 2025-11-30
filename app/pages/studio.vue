@@ -8,6 +8,8 @@
                 <Graph />
             </div>
         </main>
+
+        <UiToast />
     </div>
 </template>
 

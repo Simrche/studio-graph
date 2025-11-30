@@ -31,10 +31,11 @@
 
 <script setup lang="ts">
 import { PhInfo } from "@phosphor-icons/vue";
-import type { SearchResult } from "yahoo-finance2/modules/search";
 import type { TickerData } from "~/types";
+import { useToastStore } from "~/stores/toast";
 
 const tickers = defineModel<TickerData[]>({ required: true });
+const toastStore = useToastStore();
 
 function getTicker(symbol: string) {
     return tickers.value.find((ticker: TickerData) => ticker.symbol === symbol);
@@ -47,7 +48,7 @@ async function addTicker(tickerToAdd: any) {
     const existingTicker = getTicker(symbol);
 
     if (existingTicker) {
-        console.error("Ce ticker est déjà dans la liste !");
+        toastStore.error("Ce ticker est déjà dans la liste !");
         return;
     }
 

@@ -12,6 +12,7 @@
     "dependencies": {
         "@nuxtjs/tailwindcss": "^6.14.0",
         "@phosphor-icons/vue": "^2.2.1",
+        "@pinia/nuxt": "^0.11.3",
         "@vueuse/core": "^14.1.0",
         "lodash": "^4.17.21",
         "nuxt": "^4.2.1",
