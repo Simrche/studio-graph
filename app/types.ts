@@ -21,6 +21,19 @@ export interface TickerInfo {
     data: WeeklyDataPoint[];
 }
 
+export interface GraphConfig {
+    animation: {
+        speed: number;
+        revealMode: boolean;
+    };
+    data: {
+        displayMode: "percentage" | "price" | "initialAmount";
+        startDate: string;
+        initialAmount: number;
+    };
+    tickers: TickerData[];
+}
+
 /**
  * Données complètes du graphique
  */

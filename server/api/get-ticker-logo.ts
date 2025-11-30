@@ -4,19 +4,24 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event);
     const symbol = query.symbol as string;
 
-    const yahooFinance = new YahooFinance();
+    const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
-    const info = await yahooFinance.quoteSummary(symbol, {
-        modules: ["assetProfile"],
-    });
+    try {
+        const info = await yahooFinance.quoteSummary(symbol, {
+            modules: ["assetProfile"],
+        });
 
-    const website = info.assetProfile?.website;
+        const website = info.assetProfile?.website;
 
-    if (!website) return;
+        if (!website) return { logoUrl: "" };
 
-    const domain = website
-        .replace(/^https?:\/\//, "")
-        .replace(/^www\./, "")
-        .split("/")[0];
-    return { logoUrl: `https://logo.clearbit.com/${domain}` };
+        const domain = website
+            .replace(/^https?:\/\//, "")
+            .replace(/^www\./, "")
+            .split("/")[0];
+
+        return { logoUrl: `https://logo.clearbit.com/${domain}` };
+    } catch (error) {
+        return { logoUrl: "" };
+    }
 });

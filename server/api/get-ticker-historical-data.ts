@@ -7,12 +7,12 @@ export default defineEventHandler(async (event) => {
 
     const end = new Date();
     const start = new Date();
-    
+
     start.setDate(0);
     start.setMonth(0);
     start.setFullYear(end.getFullYear() - years);
 
-    const yahooFinance = new YahooFinance();
+    const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
     return yahooFinance.historical(symbol, {
         period1: start,
@@ -20,4 +20,3 @@ export default defineEventHandler(async (event) => {
         interval: "1wk",
     });
 });
-
