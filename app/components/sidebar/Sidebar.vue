@@ -2,7 +2,7 @@
     <aside
         class="w-96 h-screen bg-black/20 backdrop-blur-[40px] border-r border-white/10 flex flex-col overflow-hidden"
     >
-        <SidebarHeader />
+        <SidebarHeader v-model="config.title" />
 
         <div
             class="flex-1 overflow-y-auto overflow-x-hidden px-6 pb-[300px] pt-6 flex flex-col gap-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-white/5 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-white/30"

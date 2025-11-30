@@ -22,6 +22,7 @@ export interface TickerInfo {
 }
 
 export interface GraphConfig {
+    title: string;
     animation: {
         speed: number;
         revealMode: boolean;

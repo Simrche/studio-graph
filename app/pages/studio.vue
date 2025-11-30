@@ -33,6 +33,7 @@ const graphRef = ref<{
 } | null>(null);
 
 const config = ref<GraphConfig>({
+    title: "",
     animation: {
         speed: 0.5,
         revealMode: true,
