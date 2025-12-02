@@ -2,6 +2,8 @@
     <div
         class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden"
     >
+        <BackgroundAnimation />
+
         <Sidebar
             v-model="config"
             :has-changes="hasChanges"
@@ -31,7 +33,6 @@ const graphRef = ref<{
 } | null>(null);
 
 const config = ref<GraphConfig>({
-    title: "",
     animation: {
         speed: 0.5,
         revealMode: true,
@@ -41,20 +42,7 @@ const config = ref<GraphConfig>({
         startDate: "2023-01-01",
         initialAmount: 1000,
     },
-    tickers: [
-        {
-            symbol: "AIR.PA",
-            name: "AIRBUS SE",
-            color: "#00205c",
-            logoUrl: "https://logo.clearbit.com/airbus.com",
-        },
-        {
-            symbol: "BA",
-            name: "Boeing Company (The)",
-            color: "#42c4e9",
-            logoUrl: "https://logo.clearbit.com/boeing.com",
-        },
-    ],
+    tickers: [],
 });
 
 // Utiliser la composable pour détecter les modifications

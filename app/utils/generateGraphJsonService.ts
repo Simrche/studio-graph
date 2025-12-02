@@ -8,11 +8,6 @@ import { datesService } from "./datesService";
 import { $fetch } from "ofetch";
 import type { ChartResultArray } from "yahoo-finance2/modules/chart";
 
-interface HistoricalDataPoint {
-    date: Date;
-    close: number;
-}
-
 class GenerateGraphJsonService {
     /**
      * Génère un objet JSON avec les données hebdomadaires de tous les tickers

@@ -21,20 +21,6 @@ export interface TickerInfo {
     data: WeeklyDataPoint[];
 }
 
-export interface GraphConfig {
-    title: string;
-    animation: {
-        speed: number;
-        revealMode: boolean;
-    };
-    data: {
-        displayMode: "percentage" | "price" | "initialAmount";
-        startDate: string;
-        initialAmount: number;
-    };
-    tickers: TickerData[];
-}
-
 /**
  * Données complètes du graphique
  */
@@ -45,6 +31,26 @@ export interface GraphData {
     dataFormat: "price" | "percentage" | "investment";
     weeks: string[];
     investmentAmount?: number;
+}
+export interface Graph {
+    id: number;
+    name?: string;
+    user_id: number;
+    created_at: string;
+    config: GraphConfig;
+}
+
+export interface GraphConfig {
+    animation: {
+        speed: number;
+        revealMode: boolean;
+    };
+    data: {
+        displayMode: "percentage" | "price" | "initialAmount";
+        startDate: string;
+        initialAmount: number;
+    };
+    tickers: TickerData[];
 }
 
 /**
