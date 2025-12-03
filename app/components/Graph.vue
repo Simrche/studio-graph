@@ -1,19 +1,16 @@
 <template>
     <div class="graph-container">
         <!-- Loader - visible seulement pendant le chargement -->
-        <div v-if="isLoading" class="absolute inset-0 z-10">
+        <div v-if="isLoading && !canvas">
             <GraphLoader />
         </div>
 
         <!-- Message sans ticker - visible seulement si aucun ticker -->
-        <div
-            v-if="!isLoading && config.tickers.length === 0"
-            class="absolute inset-0 z-10"
-        >
+        <div v-if="!isLoading && config.tickers.length === 0">
             <div class="flex items-center justify-center w-full h-full">
                 <div
-                    class="flex flex-col items-center gap-4 text-center px-8"
-                    style="min-height: 156px"
+                    class="flex flex-col items-center gap-4 text-center justify-center px-8"
+                    style="min-height: 500px"
                 >
                     <div
                         class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center"

@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 const title = defineModel<string>({
-    required: true,
+    required: false,
 });
 
 const isFocused = ref(false);
