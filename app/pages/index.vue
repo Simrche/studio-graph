@@ -12,7 +12,7 @@
                         Mes Graphiques
                     </h1>
                     <p class="text-white/60">
-                        Gérez et créez vos graphiques de comparaison
+                        Gérez et créez vos graphiques animés
                     </p>
                 </div>
                 <div class="shrink-0">
@@ -47,12 +47,15 @@
                 <p class="text-white/40 mb-8">
                     Créez votre premier graphique pour commencer
                 </p>
-                <UiButton variant="primary" @click="createNewGraph">
-                    <template #icon>
-                        <PhPlus :size="20" weight="bold" />
-                    </template>
-                    Créer un graphique
-                </UiButton>
+
+                <div class="w-64">
+                    <UiButton variant="primary" @click="createNewGraph">
+                        <template #icon>
+                            <PhPlus :size="20" weight="bold" />
+                        </template>
+                        Créer un graphique
+                    </UiButton>
+                </div>
             </div>
 
             <div

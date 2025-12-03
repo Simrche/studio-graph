@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import { shallowRef, markRaw } from "vue";
 import {
     PhChartLine,
     PhTrendUp,
@@ -57,9 +58,11 @@ const iconComponents = [
     PhPercent,
 ];
 
-const icons = ref<FallingIcon[]>([]);
+const icons = shallowRef<FallingIcon[]>([]);
 
 const createIcon = (id: number): FallingIcon => {
+    const randomComponent =
+        iconComponents[Math.floor(Math.random() * iconComponents.length)];
     return {
         id,
         x: Math.random() * 100,
@@ -68,8 +71,7 @@ const createIcon = (id: number): FallingIcon => {
         size: Math.random() * 40 + 30, // Entre 30 et 70px
         duration: 20,
         rotation: Math.random() * 360,
-        component:
-            iconComponents[Math.floor(Math.random() * iconComponents.length)],
+        component: markRaw(randomComponent as any),
     };
 };
 

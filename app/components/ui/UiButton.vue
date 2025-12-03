@@ -4,20 +4,24 @@
             'w-full px-4 py-3 rounded-xl font-medium transition-all duration-200',
             'flex items-center justify-center gap-2',
             variantClasses,
-            disabled && 'opacity-50 cursor-not-allowed',
+            (disabled || loading) && 'opacity-50 cursor-not-allowed',
         ]"
-        :disabled="disabled"
+        :disabled="disabled || loading"
         @click="$emit('click')"
     >
-        <slot name="icon"></slot>
+        <PhSpinner v-if="loading" :size="20" class="animate-spin" />
+        <slot v-else name="icon"></slot>
         <span><slot></slot></span>
     </button>
 </template>
 
 <script setup lang="ts">
+import { PhSpinner } from "@phosphor-icons/vue";
+
 const props = defineProps<{
     variant?: "primary" | "secondary" | "active";
     disabled?: boolean;
+    loading?: boolean;
 }>();
 
 defineEmits<{
