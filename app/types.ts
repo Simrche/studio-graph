@@ -34,9 +34,10 @@ export interface GraphData {
 }
 export interface Graph {
     id: number;
-    name?: string;
-    user_id: number;
+    name?: string | null;
+    user_id: string;
     created_at: string;
+    updated_at: string;
     config: GraphConfig;
 }
 

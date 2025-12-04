@@ -7,10 +7,11 @@
         <div class="flex items-start justify-between mb-4">
             <div class="flex-1 min-w-0">
                 <h3 class="text-lg font-semibold text-white mb-1 truncate">
-                    {{ graph.title }}
+                    {{ graph.name ?? "Sans titre" }}
                 </h3>
                 <p class="text-sm text-white/50">
-                    {{ graph.tickersCount }} tickers · {{ formatDate(graph.updatedAt) }}
+                    {{ tickerCount }} tickers ·
+                    {{ formatDate(new Date(graph.created_at)) }}
                 </p>
             </div>
             <button
@@ -24,7 +25,7 @@
         <!-- Tickers Preview -->
         <div class="flex items-center gap-2 mb-4">
             <div
-                v-for="ticker in graph.tickers.slice(0, 4)"
+                v-for="ticker in graph.config.tickers.slice(0, 4)"
                 :key="ticker.symbol"
                 class="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg"
             >
@@ -36,8 +37,11 @@
                 />
                 <span class="text-xs text-white/80">{{ ticker.symbol }}</span>
             </div>
-            <div v-if="graph.tickers.length > 4" class="text-xs text-white/50">
-                +{{ graph.tickers.length - 4 }}
+            <div
+                v-if="graph.config.tickers.length > 4"
+                class="text-xs text-white/50"
+            >
+                +{{ graph.config.tickers.length - 4 }}
             </div>
         </div>
 
@@ -46,14 +50,12 @@
             class="h-32 bg-white/5 rounded-lg flex items-end justify-around p-4 gap-1"
         >
             <div
-                v-for="(height, index) in graph.mockChartData"
-                :key="index"
+                v-for="ticker in graph.config.tickers"
+                :key="ticker.symbol"
                 class="flex-1 rounded-t transition-all duration-300"
                 :style="{
-                    height: `${height}%`,
-                    backgroundColor:
-                        graph.tickers[index % graph.tickers.length]?.color ||
-                        '#8b5cf6',
+                    height: `${Math.random() * 100}%`,
+                    backgroundColor: ticker.color || '#8b5cf6',
                     opacity: 0.6,
                 }"
             ></div>
@@ -63,34 +65,17 @@
         <div
             class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/50"
         >
-            <span>Modifié le {{ graph.startDate }}</span>
+            <span>Modifié le {{ formatDate(new Date(graph.updated_at)) }}</span>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { PhTrash } from "@phosphor-icons/vue";
+import type { Graph } from "~/types";
 
-interface Ticker {
-    symbol: string;
-    name: string;
-    color: string;
-    logoUrl?: string;
-}
-
-interface GraphPreview {
-    id: string;
-    title: string;
-    tickersCount: number;
-    tickers: Ticker[];
-    startDate: string;
-    updatedAt: Date;
-    views: number;
-    mockChartData: number[];
-}
-
-defineProps<{
-    graph: GraphPreview;
+const props = defineProps<{
+    graph: Graph;
 }>();
 
 defineEmits<{
@@ -98,10 +83,12 @@ defineEmits<{
     delete: [];
 }>();
 
+const tickerCount = computed(() => props.graph.config.tickers.length);
+
 function formatDate(date: Date): string {
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffTime = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "Aujourd'hui";
     if (diffDays === 1) return "Hier";

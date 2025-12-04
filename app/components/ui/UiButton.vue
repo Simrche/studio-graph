@@ -10,18 +10,26 @@
         @click="$emit('click')"
     >
         <PhSpinner v-if="loading" :size="20" class="animate-spin" />
-        <slot v-else name="icon"></slot>
-        <span><slot></slot></span>
+        <template v-else>
+            <component v-if="iconLeft" :is="iconLeft" :size="iconSize" />
+            <slot name="icon"></slot>
+            <span><slot></slot></span>
+            <component v-if="iconRight" :is="iconRight" :size="iconSize" />
+        </template>
     </button>
 </template>
 
 <script setup lang="ts">
 import { PhSpinner } from "@phosphor-icons/vue";
+import type { Component } from "vue";
 
 const props = defineProps<{
     variant?: "primary" | "secondary" | "active";
     disabled?: boolean;
     loading?: boolean;
+    iconLeft?: Component;
+    iconRight?: Component;
+    iconSize?: number;
 }>();
 
 defineEmits<{

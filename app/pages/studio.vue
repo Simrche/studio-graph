@@ -4,27 +4,42 @@
     >
         <BackgroundAnimation />
 
-        <Sidebar
-            v-model="config"
-            :has-changes="hasChanges"
-            @apply="handleApply"
-        />
-
-        <!-- Main Canvas Area -->
-        <main
-            class="flex-1 p-8 flex flex-col items-center justify-center min-w-0 overflow-auto"
-        >
-            <div class="w-full max-w-full flex justify-center items-center">
-                <Graph ref="graphRef" v-model:config="config" />
+        <template v-if="loading">
+            <div
+                class="flex-1 flex items-center justify-center text-white text-xl"
+            >
+                Chargement du graphique...
             </div>
-        </main>
+        </template>
+
+        <template v-else-if="graphData">
+            <Sidebar
+                v-model="graphData.config"
+                v-model:name="graphData.name"
+                :has-changes="hasChanges"
+                @apply="handleApply"
+            />
+
+            <!-- Main Canvas Area -->
+            <main
+                class="flex-1 p-8 flex flex-col items-center justify-center min-w-0 overflow-auto"
+            >
+                <div class="w-full max-w-full flex justify-center items-center">
+                    <Graph ref="graphRef" v-model:config="graphData.config" />
+                </div>
+            </main>
+        </template>
 
         <UiToast />
     </div>
 </template>
 
 <script setup lang="ts">
-import type { GraphConfig } from "~/types";
+import type { Graph } from "~/types";
+import { useDebounceFn } from "@vueuse/core";
+
+const supabase = useSupabaseClient<any>();
+const route = useRoute();
 
 const graphRef = ref<{
     reload: () => Promise<void>;
@@ -32,30 +47,82 @@ const graphRef = ref<{
     isAnimating: Ref<boolean>;
 } | null>(null);
 
-const config = ref<GraphConfig>({
-    animation: {
-        speed: 0.5,
-        revealMode: true,
-    },
-    data: {
-        displayMode: "percentage" as "percentage" | "price" | "initialAmount",
-        startDate: "2023-01-01",
-        initialAmount: 1000,
-    },
-    tickers: [],
+const loading = ref(true);
+const graphData = ref<Graph | null>(null);
+
+const graphId = computed(() => {
+    const id = route.query.id;
+    if (!id) return null;
+    return parseInt(id as string);
 });
 
-// Utiliser la composable pour détecter les modifications
 const { modified: hasChanges, resetInitial } = useModification(() => ({
-    ...config.value.data,
-    ...config.value.tickers,
+    ...graphData.value?.config.data,
+    ...graphData.value?.config.tickers,
 }));
 
-// Gérer l'application des modifications
+const debouncedSave = useDebounceFn(async () => {
+    if (!graphData.value || !graphId.value) return;
+
+    await save();
+}, 1500);
+
+watch(
+    [() => graphData.value?.config.animation, () => graphData.value?.name],
+    async () => {
+        if (!graphData.value) return;
+
+        debouncedSave();
+    }
+);
+
+// Charger le graphique
+onMounted(async () => {
+    if (!graphId.value) {
+        loading.value = false;
+        return;
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from("graphs")
+            .select("*")
+            .eq("id", graphId.value)
+            .single();
+
+        if (error) throw error;
+
+        graphData.value = data as unknown as Graph;
+    } catch (error) {
+        console.error("Erreur lors du chargement du graphique:", error);
+    } finally {
+        loading.value = false;
+        // Réinitialiser useModification après le chargement
+        if (graphData.value) {
+            resetInitial();
+        }
+    }
+});
+
+async function save() {
+    if (!graphData.value) return;
+
+    await supabase
+        .from("graphs")
+        .update({
+            name: graphData.value.name,
+            config: graphData.value.config,
+        })
+        .eq("id", graphData.value.id);
+}
+
 async function handleApply() {
+    if (!graphData.value) return;
+
+    await save();
+
     if (graphRef.value) {
         await graphRef.value.reload();
-        // Réinitialiser l'état initial après le rechargement réussi
         resetInitial();
     }
 }

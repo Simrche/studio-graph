@@ -33,7 +33,7 @@
         <!-- Graphs Grid -->
         <div class="max-w-7xl mx-auto">
             <div
-                v-if="graphs.length === 0"
+                v-if="graphs?.length === 0"
                 class="flex flex-col items-center justify-center py-24"
             >
                 <PhChartLine
@@ -59,7 +59,7 @@
             </div>
 
             <div
-                v-else
+                v-else-if="graphs"
                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
                 <GraphCard
@@ -70,6 +70,10 @@
                     @delete="deleteGraph(graph.id)"
                 />
             </div>
+
+            <div v-else>
+                <p>Chargement...</p>
+            </div>
         </div>
 
         <UiToast />
@@ -78,131 +82,76 @@
 
 <script setup lang="ts">
 import { PhPlus, PhChartLine } from "@phosphor-icons/vue";
+import type { Graph } from "~/types";
 
-interface GraphPreview {
-    id: string;
-    title: string;
-    tickersCount: number;
-    tickers: Array<{
-        symbol: string;
-        name: string;
-        color: string;
-        logoUrl?: string;
-    }>;
-    startDate: string;
-    updatedAt: Date;
-    views: number;
-    mockChartData: number[];
+const supabase = useSupabaseClient<any>();
+const user = useSupabaseUser();
+
+const { data: graphs, refresh } = await useAsyncData("graphs", async () => {
+    const { data, error } = await supabase
+        .from("graphs")
+        .select("*")
+        .is("deleted_at", null);
+
+    if (error) {
+        throw createError({ statusCode: 500, statusMessage: error.message });
+    }
+
+    return data as unknown as Graph[];
+});
+
+async function createNewGraph() {
+    if (!user.value?.sub) {
+        throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+    }
+
+    const { data, error } = await supabase
+        .from("graphs")
+        .insert({
+            user_id: user.value.sub,
+            updated_at: new Date().toISOString(),
+            config: {
+                animation: {
+                    speed: 0.5,
+                    revealMode: true,
+                },
+                data: {
+                    displayMode: "percentage" as
+                        | "percentage"
+                        | "price"
+                        | "initialAmount",
+                    startDate: "2023-01-01",
+                    initialAmount: 1000,
+                },
+                tickers: [],
+            },
+        })
+        .select()
+        .single();
+
+    if (error) {
+        throw createError({ statusCode: 500, statusMessage: error.message });
+    }
+
+    navigateTo(`/studio?id=${data.id}`);
 }
 
-const graphs = ref<GraphPreview[]>([
-    {
-        id: "1",
-        title: "Aéronautique: Airbus vs Boeing",
-        tickersCount: 2,
-        tickers: [
-            {
-                symbol: "AIR.PA",
-                name: "AIRBUS SE",
-                color: "#00205c",
-                logoUrl: "https://logo.clearbit.com/airbus.com",
-            },
-            {
-                symbol: "BA",
-                name: "Boeing Company (The)",
-                color: "#42c4e9",
-                logoUrl: "https://logo.clearbit.com/boeing.com",
-            },
-        ],
-        startDate: "2023-01-01",
-        updatedAt: new Date("2024-11-28"),
-        views: 1243,
-        mockChartData: [45, 60, 55, 70, 65, 75, 80, 85, 90, 88],
-    },
-    {
-        id: "2",
-        title: "Tech Giants FAANG",
-        tickersCount: 5,
-        tickers: [
-            {
-                symbol: "META",
-                name: "Meta Platforms",
-                color: "#0081FB",
-                logoUrl: "https://logo.clearbit.com/meta.com",
-            },
-            {
-                symbol: "AAPL",
-                name: "Apple Inc.",
-                color: "#000000",
-                logoUrl: "https://logo.clearbit.com/apple.com",
-            },
-            {
-                symbol: "AMZN",
-                name: "Amazon.com Inc.",
-                color: "#FF9900",
-                logoUrl: "https://logo.clearbit.com/amazon.com",
-            },
-            {
-                symbol: "NFLX",
-                name: "Netflix Inc.",
-                color: "#E50914",
-                logoUrl: "https://logo.clearbit.com/netflix.com",
-            },
-            {
-                symbol: "GOOGL",
-                name: "Alphabet Inc.",
-                color: "#4285F4",
-                logoUrl: "https://logo.clearbit.com/google.com",
-            },
-        ],
-        startDate: "2022-06-15",
-        updatedAt: new Date("2024-11-30"),
-        views: 3567,
-        mockChartData: [30, 45, 50, 55, 60, 58, 65, 70, 72, 75],
-    },
-    {
-        id: "3",
-        title: "Constructeurs Automobiles",
-        tickersCount: 3,
-        tickers: [
-            {
-                symbol: "TSLA",
-                name: "Tesla Inc.",
-                color: "#CC0000",
-                logoUrl: "https://logo.clearbit.com/tesla.com",
-            },
-            {
-                symbol: "F",
-                name: "Ford Motor Company",
-                color: "#003478",
-                logoUrl: "https://logo.clearbit.com/ford.com",
-            },
-            {
-                symbol: "GM",
-                name: "General Motors",
-                color: "#0057A5",
-                logoUrl: "https://logo.clearbit.com/gm.com",
-            },
-        ],
-        startDate: "2023-03-20",
-        updatedAt: new Date("2024-11-25"),
-        views: 892,
-        mockChartData: [50, 55, 52, 58, 65, 70, 68, 75, 80, 78],
-    },
-]);
-
-function createNewGraph() {
-    navigateTo("/studio");
-}
-
-function openGraph(id: string) {
+function openGraph(id: number) {
     navigateTo(`/studio?id=${id}`);
 }
 
-function deleteGraph(id: string) {
-    const index = graphs.value.findIndex((g) => g.id === id);
-    if (index !== -1) {
-        graphs.value.splice(index, 1);
+async function deleteGraph(id: number) {
+    const { error } = await supabase
+        .from("graphs")
+        .update({
+            deleted_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+    if (error) {
+        throw createError({ statusCode: 500, statusMessage: error.message });
     }
+
+    refresh();
 }
 </script>
