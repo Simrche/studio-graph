@@ -53,7 +53,7 @@
             class="canvas-wrapper"
             :class="{
                 hidden: config.tickers.length === 0,
-                'mobile-mode': config.animation.device === 'mobile'
+                'mobile-mode': config.animation.device === 'mobile',
             }"
             :style="{ aspectRatio }"
         >
@@ -65,7 +65,7 @@
             class="legend-panel"
             :class="{
                 hidden: isLoading || config.tickers.length === 0,
-                'mobile-mode': config.animation.device === 'mobile'
+                'mobile-mode': config.animation.device === 'mobile',
             }"
         >
             <div class="legend-content">
@@ -118,7 +118,7 @@ const legendData = ref<Array<{ name: string; logo: string; color: string }>>(
 
 // Computed property pour l'aspect ratio basé sur le device
 const aspectRatio = computed(() => {
-    return config.value.animation.device === 'mobile' ? '9 / 16' : '16 / 9';
+    return config.value.animation.device === "mobile" ? "9 / 16" : "16 / 9";
 });
 
 // Exposer la fonction de rechargement au parent
@@ -168,27 +168,36 @@ function handleTogglePlayPause() {
 }
 
 // Watchers pour synchroniser les changements avec le chart
-watch(() => config.value.animation.speed, (newSpeed) => {
-    if (chart) {
-        chart.setAnimationSpeed(newSpeed);
+watch(
+    () => config.value.animation.speed,
+    (newSpeed) => {
+        if (chart) {
+            chart.setAnimationSpeed(newSpeed);
+        }
     }
-});
+);
 
-watch(() => config.value.animation.revealMode, (newRevealMode) => {
-    if (chart) {
-        chart.setRevealMode(newRevealMode);
+watch(
+    () => config.value.animation.revealMode,
+    (newRevealMode) => {
+        if (chart) {
+            chart.setRevealMode(newRevealMode);
+        }
     }
-});
+);
 
-watch(() => config.value.animation.device, async (newDevice) => {
-    if (chart) {
-        chart.setDevice(newDevice);
-        // Attendre le prochain tick pour que le DOM soit mis à jour avec le nouvel aspect ratio
-        await nextTick();
-        chart.setupCanvas();
-        chart.draw();
+watch(
+    () => config.value.animation.device,
+    async (newDevice) => {
+        if (chart) {
+            chart.setDevice(newDevice);
+            // Attendre le prochain tick pour que le DOM soit mis à jour avec le nouvel aspect ratio
+            await nextTick();
+            chart.setupCanvas();
+            chart.draw();
+        }
     }
-});
+);
 
 defineExpose({
     reload,
@@ -290,7 +299,7 @@ onUnmounted(() => {
 }
 
 .canvas-wrapper.mobile-mode {
-    max-width: 400px;
+    max-width: 350px;
     margin: 0 auto;
 }
 

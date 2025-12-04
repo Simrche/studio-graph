@@ -74,6 +74,17 @@ export class StockChart {
         if (options?.device !== undefined) {
             this.device = options.device;
         }
+
+        // Initialiser le padding en fonction du device
+        if (this.device === "mobile") {
+            this.padding = {
+                top: 30,
+                right: 20,
+                bottom: 40,
+                left: 60,
+            };
+        }
+
         this.setupCanvas();
     }
 
@@ -449,7 +460,26 @@ export class StockChart {
 
     setDevice(device: "mobile" | "desktop") {
         this.device = device;
+        this.updatePadding();
         this.draw();
+    }
+
+    updatePadding() {
+        if (this.device === "mobile") {
+            this.padding = {
+                top: 30,
+                right: 20,
+                bottom: 40,
+                left: 60,
+            };
+        } else {
+            this.padding = {
+                top: 60,
+                right: 150,
+                bottom: 60,
+                left: 100,
+            };
+        }
     }
 
     animate() {
