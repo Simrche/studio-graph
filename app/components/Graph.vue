@@ -41,12 +41,11 @@
         <GraphControls
             v-if="!isLoading && config.tickers.length > 0"
             :is-playing="isAnimating"
-            :animation-speed="config.animation.speed"
-            :reveal-mode="config.animation.revealMode"
+            v-model:speed="config.animation.speed"
+            v-model:revealMode="config.animation.revealMode"
+            v-model:device="config.animation.device"
             @toggle-play-pause="handleTogglePlayPause"
-            @restart="handleRestart"
-            @speed-change="handleSpeedChange"
-            @reveal-mode-change="handleRevealModeChange"
+            @restart="restart"
         />
 
         <!-- Canvas - toujours présent dans le DOM, caché si nécessaire -->
@@ -80,9 +79,9 @@
                         }"
                     >
                         <img
+                            v-if="company.logo"
                             :src="company.logo"
                             :alt="company.name"
-                            @error="(e) => (e.target as HTMLImageElement).style.display = 'none'"
                         />
                     </div>
                     <span class="legend-name">{{ company.name }}</span>
@@ -156,28 +155,24 @@ function handleTogglePlayPause() {
     }
 }
 
-// Gérer le restart
-const handleRestart = () => {
-    restart();
-};
-
-// Gérer le changement de vitesse
-function handleSpeedChange(speed: number) {
+// Watchers pour synchroniser les changements avec le chart
+watch(() => config.value.animation.speed, (newSpeed) => {
     if (chart) {
-        chart.setAnimationSpeed(speed);
+        chart.setAnimationSpeed(newSpeed);
     }
-    // Mettre à jour la config
-    config.value.animation.speed = speed;
-}
+});
 
-// Gérer le changement de mode révélation
-function handleRevealModeChange(revealMode: boolean) {
+watch(() => config.value.animation.revealMode, (newRevealMode) => {
     if (chart) {
-        chart.setRevealMode(revealMode);
+        chart.setRevealMode(newRevealMode);
     }
-    // Mettre à jour la config
-    config.value.animation.revealMode = revealMode;
-}
+});
+
+watch(() => config.value.animation.device, (newDevice) => {
+    if (chart) {
+        chart.setDevice(newDevice);
+    }
+});
 
 defineExpose({
     reload,

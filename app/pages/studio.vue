@@ -73,7 +73,8 @@ watch(
         if (!graphData.value) return;
 
         debouncedSave();
-    }
+    },
+    { deep: true }
 );
 
 // Charger le graphique

@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import { PhPlus, PhChartLine } from "@phosphor-icons/vue";
-import type { Graph } from "~/types";
+import type { Graph, GraphConfig } from "~/types";
 
 const supabase = useSupabaseClient<any>();
 const user = useSupabaseUser();
@@ -105,26 +105,29 @@ async function createNewGraph() {
         throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
     }
 
+    const config: GraphConfig = {
+        animation: {
+            speed: 0.5,
+            revealMode: true,
+            device: "desktop",
+        },
+        data: {
+            displayMode: "percentage" as
+                | "percentage"
+                | "price"
+                | "initialAmount",
+            startDate: "2023-01-01",
+            initialAmount: 1000,
+        },
+        tickers: [],
+    };
+
     const { data, error } = await supabase
         .from("graphs")
         .insert({
             user_id: user.value.sub,
             updated_at: new Date().toISOString(),
-            config: {
-                animation: {
-                    speed: 0.5,
-                    revealMode: true,
-                },
-                data: {
-                    displayMode: "percentage" as
-                        | "percentage"
-                        | "price"
-                        | "initialAmount",
-                    startDate: "2023-01-01",
-                    initialAmount: 1000,
-                },
-                tickers: [],
-            },
+            config,
         })
         .select()
         .single();

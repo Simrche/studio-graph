@@ -22,6 +22,7 @@ export interface JsonData {
 export interface StockChartOptions {
     animationSpeed?: number;
     revealMode?: boolean;
+    device?: "mobile" | "desktop";
 }
 
 export class StockChart {
@@ -32,6 +33,7 @@ export class StockChart {
     currentFrame = 0;
     totalFrames = 0;
     animationSpeed = 0.5;
+    device = "desktop";
     isAnimating = false;
     revealMode = true;
     padding = {
@@ -69,7 +71,9 @@ export class StockChart {
         if (options?.revealMode !== undefined) {
             this.revealMode = options.revealMode;
         }
-
+        if (options?.device !== undefined) {
+            this.device = options.device;
+        }
         this.setupCanvas();
     }
 
@@ -440,6 +444,11 @@ export class StockChart {
 
     setRevealMode(revealMode: boolean) {
         this.revealMode = revealMode;
+        this.draw();
+    }
+
+    setDevice(device: "mobile" | "desktop") {
+        this.device = device;
         this.draw();
     }
 

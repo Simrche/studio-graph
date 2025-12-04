@@ -45,6 +45,7 @@ export interface GraphConfig {
     animation: {
         speed: number;
         revealMode: boolean;
+        device: "mobile" | "desktop";
     };
     data: {
         displayMode: "percentage" | "price" | "initialAmount";

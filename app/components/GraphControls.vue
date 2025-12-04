@@ -2,6 +2,35 @@
     <div
         class="flex items-center gap-4 px-6 py-4 bg-white border-b border-slate-200"
     >
+        <!-- Device Toggle -->
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+                <button
+                    @click="device = 'mobile'"
+                    :class="[
+                        'flex items-center justify-center px-3 py-1.5 rounded-md transition-all',
+                        device === 'mobile'
+                            ? 'bg-white text-purple-600 shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900',
+                    ]"
+                    title="Mode mobile"
+                >
+                    <PhDeviceMobile class="w-4 h-4" />
+                </button>
+                <button
+                    @click="device = 'desktop'"
+                    :class="[
+                        'flex items-center justify-center px-3 py-1.5 rounded-md transition-all',
+                        device === 'desktop'
+                            ? 'bg-white text-purple-600 shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900',
+                    ]"
+                    title="Mode desktop"
+                >
+                    <PhDesktop class="w-4 h-4" />
+                </button>
+            </div>
+        </div>
         <!-- Play/Pause Button -->
         <button
             @click="$emit('togglePlayPause')"
@@ -29,14 +58,13 @@
             <input
                 type="range"
                 v-model.number="speed"
-                @input="$emit('speedChange', speed)"
                 min="0.1"
                 max="2"
                 step="0.1"
                 class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
             />
             <span class="text-sm font-medium text-slate-700 w-8 text-right">
-                {{ speed.toFixed(1) }}x
+                {{ speed?.toFixed(1) }}x
             </span>
         </div>
 
@@ -46,7 +74,7 @@
                 Mode révélation
             </span>
             <button
-                @click="toggleRevealMode"
+                @click="revealMode = !revealMode"
                 :class="[
                     'relative w-12 h-6 rounded-full transition-colors',
                     revealMode ? 'bg-purple-500' : 'bg-slate-300',
@@ -64,43 +92,27 @@
 </template>
 
 <script setup lang="ts">
-import { PhPlay, PhPause, PhArrowCounterClockwise } from "@phosphor-icons/vue";
+import {
+    PhPlay,
+    PhPause,
+    PhArrowCounterClockwise,
+    PhDeviceMobile,
+    PhDesktop,
+} from "@phosphor-icons/vue";
+import type { GraphConfig } from "~/types";
 
-const props = defineProps<{
+defineProps<{
     isPlaying: boolean;
-    animationSpeed: number;
-    revealMode: boolean;
 }>();
 
 const emit = defineEmits<{
     togglePlayPause: [];
     restart: [];
-    speedChange: [speed: number];
-    revealModeChange: [revealMode: boolean];
 }>();
 
-const speed = ref(props.animationSpeed);
-const revealMode = ref(props.revealMode);
-
-// Synchroniser avec les props
-watch(
-    () => props.animationSpeed,
-    (newSpeed) => {
-        speed.value = newSpeed;
-    }
-);
-
-watch(
-    () => props.revealMode,
-    (newRevealMode) => {
-        revealMode.value = newRevealMode;
-    }
-);
-
-function toggleRevealMode() {
-    revealMode.value = !revealMode.value;
-    emit("revealModeChange", revealMode.value);
-}
+const speed = defineModel<number>("speed");
+const revealMode = defineModel<boolean>("revealMode");
+const device = defineModel<"mobile" | "desktop">("device");
 </script>
 
 <style scoped>
