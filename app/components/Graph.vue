@@ -51,7 +51,11 @@
         <!-- Canvas - toujours présent dans le DOM, caché si nécessaire -->
         <div
             class="canvas-wrapper"
-            :class="{ hidden: config.tickers.length === 0 }"
+            :class="{
+                hidden: config.tickers.length === 0,
+                'mobile-mode': config.animation.device === 'mobile'
+            }"
+            :style="{ aspectRatio }"
         >
             <canvas id="graphCanvas" ref="canvas"></canvas>
         </div>
@@ -59,7 +63,10 @@
         <!-- Legend Panel - caché si pas de données -->
         <div
             class="legend-panel"
-            :class="{ hidden: isLoading || config.tickers.length === 0 }"
+            :class="{
+                hidden: isLoading || config.tickers.length === 0,
+                'mobile-mode': config.animation.device === 'mobile'
+            }"
         >
             <div class="legend-content">
                 <div
@@ -108,6 +115,11 @@ let chart: StockChart | null = null;
 const legendData = ref<Array<{ name: string; logo: string; color: string }>>(
     []
 );
+
+// Computed property pour l'aspect ratio basé sur le device
+const aspectRatio = computed(() => {
+    return config.value.animation.device === 'mobile' ? '9 / 16' : '16 / 9';
+});
 
 // Exposer la fonction de rechargement au parent
 const reload = async () => {
@@ -168,9 +180,13 @@ watch(() => config.value.animation.revealMode, (newRevealMode) => {
     }
 });
 
-watch(() => config.value.animation.device, (newDevice) => {
+watch(() => config.value.animation.device, async (newDevice) => {
     if (chart) {
         chart.setDevice(newDevice);
+        // Attendre le prochain tick pour que le DOM soit mis à jour avec le nouvel aspect ratio
+        await nextTick();
+        chart.setupCanvas();
+        chart.draw();
     }
 });
 
@@ -270,7 +286,12 @@ onUnmounted(() => {
     position: relative;
     background: #f8fafc;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    max-width: 100%;
+}
+
+.canvas-wrapper.mobile-mode {
+    max-width: 400px;
+    margin: 0 auto;
 }
 
 .canvas-wrapper.hidden {
@@ -288,6 +309,10 @@ onUnmounted(() => {
     background: white;
     border-top: 1px solid #e2e8f0;
     padding: 2rem;
+}
+
+.legend-panel.mobile-mode {
+    padding: 1rem;
 }
 
 .legend-panel.hidden {
