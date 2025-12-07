@@ -45,6 +45,7 @@
             <UiButton
                 variant="active"
                 :disabled="!hasChanges"
+                :loading="loading"
                 @click="$emit('apply')"
             >
                 <template #icon>
@@ -68,6 +69,7 @@ const name = defineModel<string | null>("name");
 
 defineProps<{
     hasChanges: boolean;
+    loading: boolean;
 }>();
 
 defineEmits<{

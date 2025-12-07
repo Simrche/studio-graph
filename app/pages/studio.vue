@@ -17,7 +17,8 @@
                 v-model="graphData.config"
                 v-model:name="graphData.name"
                 :has-changes="hasChanges"
-                @apply="handleApply"
+                :loading="applyLoading"
+                @apply="apply"
             />
 
             <!-- Main Canvas Area -->
@@ -118,6 +119,8 @@ async function save() {
         })
         .eq("id", graphData.value.id);
 }
+
+const { loading: applyLoading, handle: apply } = useLoading(handleApply);
 
 async function handleApply() {
     if (!graphData.value || !graphId.value) return;
