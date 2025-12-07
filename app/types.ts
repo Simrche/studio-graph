@@ -32,6 +32,8 @@ export interface GraphData {
     weeks: string[];
     investmentAmount?: number;
 }
+export type GraphType = "default" | "stocks";
+
 export interface Graph {
     id: number;
     name?: string | null;
@@ -40,6 +42,7 @@ export interface Graph {
     updated_at: string;
     config: GraphConfig;
     preview_url?: string | null;
+    type: GraphType;
 }
 
 export interface GraphConfig {

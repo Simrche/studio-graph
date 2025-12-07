@@ -116,7 +116,7 @@ async function save() {
             name: graphData.value.name,
             config: graphData.value.config,
             preview_url: graphData.value.preview_url,
-            updated_at: new Date().toISOString(),
+            updated_at: new Date(),
         })
         .eq("id", graphData.value.id);
 }

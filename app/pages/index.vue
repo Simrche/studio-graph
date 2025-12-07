@@ -19,7 +19,7 @@
                     <UiButton
                         variant="primary"
                         size="sm"
-                        @click="createNewGraph"
+                        @click="openCreateModal"
                     >
                         <template #icon>
                             <PhPlus :size="16" weight="bold" />
@@ -49,7 +49,7 @@
                 </p>
 
                 <div class="w-64">
-                    <UiButton variant="primary" @click="createNewGraph">
+                    <UiButton variant="primary" @click="openCreateModal">
                         <template #icon>
                             <PhPlus :size="20" weight="bold" />
                         </template>
@@ -77,12 +77,24 @@
         </div>
 
         <UiToast />
+
+        <!-- Modal de création -->
+        <UiModal
+            v-model="showCreateModal"
+            title="Nouveau graphique"
+            size="lg"
+        >
+            <GraphTypeSelector
+                :loading="isCreating"
+                @create="createNewGraph"
+            />
+        </UiModal>
     </div>
 </template>
 
 <script setup lang="ts">
 import { PhPlus, PhChartLine } from "@phosphor-icons/vue";
-import type { Graph, GraphConfig } from "~/types";
+import type { Graph, GraphConfig, GraphType } from "~/types";
 
 const supabase = useSupabaseClient<any>();
 const user = useSupabaseUser();
@@ -101,44 +113,60 @@ const { data: graphs, refresh } = await useAsyncData("graphs", async () => {
     return data as unknown as Graph[];
 });
 
-async function createNewGraph() {
-    if (!user.value?.sub) {
-        throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
-    }
+const showCreateModal = ref(false);
 
-    const config: GraphConfig = {
-        animation: {
-            speed: 0.5,
-            revealMode: true,
-            device: "desktop",
-        },
-        data: {
-            displayMode: "percentage" as
-                | "percentage"
-                | "price"
-                | "initialAmount",
-            startDate: "2023-01-01",
-            initialAmount: 1000,
-        },
-        tickers: [],
-    };
-
-    const { data, error } = await supabase
-        .from("graphs")
-        .insert({
-            user_id: user.value.sub,
-            updated_at: new Date().toISOString(),
-            config,
-        })
-        .select()
-        .single();
-
-    if (error) {
-        throw createError({ statusCode: 500, statusMessage: error.message });
-    }
-
-    navigateTo(`/studio?id=${data.id}`);
+function openCreateModal() {
+    showCreateModal.value = true;
 }
+
+const { loading: isCreating, handle: createNewGraph } = useLoading(
+    async (type: GraphType) => {
+        if (!user.value?.sub) {
+            throw createError({
+                statusCode: 401,
+                statusMessage: "Unauthorized",
+            });
+        }
+
+        const config: GraphConfig = {
+            animation: {
+                speed: 0.5,
+                revealMode: true,
+                device: "desktop",
+            },
+            data: {
+                displayMode: "percentage" as
+                    | "percentage"
+                    | "price"
+                    | "initialAmount",
+                startDate: "2023-01-01",
+                initialAmount: 1000,
+            },
+            tickers: [],
+        };
+
+        const { data, error } = await supabase
+            .from("graphs")
+            .insert({
+                user_id: user.value.sub,
+                updated_at: new Date(),
+                config,
+                type,
+            })
+            .select()
+            .single();
+
+        if (error) {
+            throw createError({
+                statusCode: 500,
+                statusMessage: error.message,
+            });
+        }
+
+        showCreateModal.value = false;
+        navigateTo(`/studio?id=${data.id}`);
+    }
+);
 
 function openGraph(id: number) {
     navigateTo(`/studio?id=${id}`);
