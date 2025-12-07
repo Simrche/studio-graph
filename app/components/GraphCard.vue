@@ -45,20 +45,23 @@
             </div>
         </div>
 
-        <!-- Mock Chart Preview -->
-        <div
-            class="h-32 bg-white/5 rounded-lg flex items-end justify-around p-4 gap-1"
-        >
+        <!-- Chart Preview -->
+        <div class="bg-white/5 rounded-lg overflow-hidden">
+            <img
+                v-if="graph.preview_url"
+                :src="graph.preview_url"
+                :alt="graph.name ?? 'Aperçu du graphique'"
+                class="w-full h-full object-cover"
+            />
             <div
-                v-for="ticker in graph.config.tickers"
-                :key="ticker.symbol"
-                class="flex-1 rounded-t transition-all duration-300"
-                :style="{
-                    height: `${Math.random() * 100}%`,
-                    backgroundColor: ticker.color || '#8b5cf6',
-                    opacity: 0.6,
-                }"
-            ></div>
+                v-else
+                class="w-full h-full flex items-center justify-center text-white/30"
+            >
+                <div class="flex flex-col items-center gap-2">
+                    <PhChartLine :size="32" weight="thin" />
+                    <span class="text-xs">Aucun aperçu</span>
+                </div>
+            </div>
         </div>
 
         <!-- Graph Stats -->
@@ -71,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { PhTrash } from "@phosphor-icons/vue";
+import { PhTrash, PhChartLine } from "@phosphor-icons/vue";
 import type { Graph } from "~/types";
 
 const props = defineProps<{

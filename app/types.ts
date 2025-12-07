@@ -39,6 +39,7 @@ export interface Graph {
     created_at: string;
     updated_at: string;
     config: GraphConfig;
+    preview_url?: string | null;
 }
 
 export interface GraphConfig {

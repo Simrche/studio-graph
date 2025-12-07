@@ -40,6 +40,7 @@ import { useDebounceFn } from "@vueuse/core";
 
 const supabase = useSupabaseClient<any>();
 const route = useRoute();
+const { createPreview, deletePreview } = useGraphPreview();
 
 const graphRef = ref<{
     reload: () => Promise<void>;
@@ -113,18 +114,56 @@ async function save() {
         .update({
             name: graphData.value.name,
             config: graphData.value.config,
+            preview_url: graphData.value.preview_url,
         })
         .eq("id", graphData.value.id);
 }
 
 async function handleApply() {
-    if (!graphData.value) return;
+    if (!graphData.value || !graphId.value) return;
 
-    await save();
+    // Sauvegarder l'ancienne URL pour la supprimer après le save
+    const oldPreviewUrl = graphData.value.preview_url;
 
-    if (graphRef.value) {
-        await graphRef.value.reload();
-        resetInitial();
+    try {
+        // Créer la nouvelle preview (sans supprimer l'ancienne)
+        const newPreviewUrl = await createPreview(
+            graphData.value.config,
+            graphId.value
+        );
+
+        // Mettre à jour l'URL de la preview
+        graphData.value.preview_url = newPreviewUrl;
+
+        // Sauvegarder avec la preview_url
+        await save();
+
+        // Supprimer l'ancienne preview uniquement après le save réussi
+        if (oldPreviewUrl) {
+            try {
+                await deletePreview(oldPreviewUrl);
+            } catch (deleteError) {
+                // Ne pas bloquer si la suppression échoue
+                console.error(
+                    "Erreur lors de la suppression de l'ancienne preview:",
+                    deleteError
+                );
+            }
+        }
+
+        if (graphRef.value) {
+            await graphRef.value.reload();
+            resetInitial();
+        }
+    } catch (error) {
+        console.error("Erreur lors de la génération de la preview:", error);
+        // On sauvegarde quand même même si la preview a échoué
+        await save();
+
+        if (graphRef.value) {
+            await graphRef.value.reload();
+            resetInitial();
+        }
     }
 }
 </script>
