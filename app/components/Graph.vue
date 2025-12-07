@@ -41,11 +41,13 @@
         <GraphControls
             v-if="!isLoading && config.tickers.length > 0"
             :is-playing="isAnimating"
+            :is-exporting="isExportingVideo"
             v-model:speed="config.animation.speed"
             v-model:revealMode="config.animation.revealMode"
             v-model:device="config.animation.device"
             @toggle-play-pause="handleTogglePlayPause"
             @restart="restart"
+            @export-video="handleExportVideo"
         />
 
         <!-- Canvas - toujours présent dans le DOM, caché si nécessaire -->
@@ -111,10 +113,13 @@ const config = defineModel<GraphConfig>("config", {
 const canvas = ref<HTMLCanvasElement | null>(null);
 const isLoading = ref(true);
 const isAnimating = ref(false);
+const isExportingVideo = ref(false);
 let chart: StockChart | null = null;
 const legendData = ref<Array<{ name: string; logo: string; color: string }>>(
     []
 );
+
+const { downloadVideo } = useGraphVideo();
 
 // Computed property pour l'aspect ratio basé sur le device
 const aspectRatio = computed(() => {
@@ -166,6 +171,29 @@ function handleTogglePlayPause() {
         checkAnimationState();
     }
 }
+
+// Gérer l'export vidéo
+const handleExportVideo = async () => {
+    isExportingVideo.value = true;
+
+    try {
+        // Déterminer le nom de fichier basé sur le device
+        const deviceSuffix =
+            config.value.animation.device === "mobile" ? "mobile" : "desktop";
+        const filename = `graph-${deviceSuffix}-${Date.now()}.webm`;
+
+        // Télécharger la vidéo
+        await downloadVideo(config.value, filename, {
+            width: config.value.animation.device === "mobile" ? 1080 : 1920,
+            fps: 60,
+            videoBitrate: 10000000, // 10 Mbps
+        });
+    } catch (error) {
+        console.error("Erreur lors de l'export vidéo:", error);
+    } finally {
+        isExportingVideo.value = false;
+    }
+};
 
 // Watchers pour synchroniser les changements avec le chart
 watch(

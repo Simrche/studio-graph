@@ -88,6 +88,19 @@
                 ></span>
             </button>
         </div>
+
+        <!-- Export Video Button -->
+        <UiButton
+            @click="$emit('exportVideo')"
+            :disabled="isExporting"
+            :loading="isExporting"
+            :icon-left="PhFilmSlate"
+            :icon-size="20"
+            class="!bg-purple-600 hover:!bg-purple-700 !text-white !border-purple-600 disabled:!bg-purple-400 !w-auto ml-auto"
+            title="Exporter la vidéo"
+        >
+            {{ isExporting ? "Export en cours..." : "Exporter" }}
+        </UiButton>
     </div>
 </template>
 
@@ -98,16 +111,20 @@ import {
     PhArrowCounterClockwise,
     PhDeviceMobile,
     PhDesktop,
+    PhVideoCamera,
+    PhFilmSlate,
 } from "@phosphor-icons/vue";
 import type { GraphConfig } from "~/types";
 
 defineProps<{
     isPlaying: boolean;
+    isExporting?: boolean;
 }>();
 
 const emit = defineEmits<{
     togglePlayPause: [];
     restart: [];
+    exportVideo: [];
 }>();
 
 const speed = defineModel<number>("speed");
