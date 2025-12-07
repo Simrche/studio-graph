@@ -97,11 +97,27 @@
                 </div>
             </div>
         </div>
+
+        <!-- Overlay de génération vidéo -->
+        <div v-if="isExportingVideo" class="export-overlay">
+            <div class="export-overlay-content">
+                <PhSpinner class="w-10 h-10 text-white animate-spin" />
+                <p class="text-white text-lg font-medium mt-4">
+                    Génération en cours...
+                </p>
+                <button
+                    @click="handleCancelExport"
+                    class="mt-6 px-6 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors border border-white/30"
+                >
+                    Annuler
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { PhChartLine } from "@phosphor-icons/vue";
+import { PhChartLine, PhSpinner } from "@phosphor-icons/vue";
 import type { GraphConfig } from "~/types";
 import { StockChart } from "~/utils/StockChart";
 import { graphDataService } from "~/utils/graphDataService";
@@ -118,8 +134,9 @@ let chart: StockChart | null = null;
 const legendData = ref<Array<{ name: string; logo: string; color: string }>>(
     []
 );
+let wasAnimatingBeforeExport = false;
 
-const { downloadVideo } = useGraphVideo();
+const { downloadVideo, cancel: cancelVideoGeneration } = useGraphVideo();
 
 // Computed property pour l'aspect ratio basé sur le device
 const aspectRatio = computed(() => {
@@ -176,6 +193,13 @@ function handleTogglePlayPause() {
 const handleExportVideo = async () => {
     isExportingVideo.value = true;
 
+    // Mettre en pause l'animation de la preview si elle est en cours
+    wasAnimatingBeforeExport = isAnimating.value;
+    if (chart && isAnimating.value) {
+        chart.pauseAnimation();
+        isAnimating.value = false;
+    }
+
     try {
         // Déterminer le nom de fichier basé sur le device
         const deviceSuffix =
@@ -193,6 +217,12 @@ const handleExportVideo = async () => {
     } finally {
         isExportingVideo.value = false;
     }
+};
+
+// Annuler la génération de vidéo
+const handleCancelExport = () => {
+    cancelVideoGeneration();
+    isExportingVideo.value = false;
 };
 
 // Watchers pour synchroniser les changements avec le chart
@@ -397,5 +427,23 @@ onUnmounted(() => {
 .legend-name {
     font-weight: 500;
     color: #1e293b;
+}
+
+.export-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    border-radius: 1rem;
+}
+
+.export-overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 </style>

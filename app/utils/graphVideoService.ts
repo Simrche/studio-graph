@@ -1,3 +1,11 @@
+/**
+ * Service de génération de vidéos haute qualité pour les graphiques
+ *
+ * Utilise webm-muxer pour encoder chaque frame individuellement,
+ * garantissant une fluidité parfaite sans dépendre du timing temps réel.
+ */
+
+import { Muxer, ArrayBufferTarget } from "webm-muxer";
 import type { GraphConfig } from "~/types";
 import { StockChart } from "~/utils/StockChart";
 import { graphDataService } from "~/utils/graphDataService";
@@ -6,14 +14,13 @@ interface VideoOptions {
     width?: number;
     fps?: number;
     videoBitrate?: number;
+    signal?: AbortSignal;
 }
 
 class GraphVideoService {
     /**
      * Génère une vidéo du graphique avec l'animation complète
-     * @param config Configuration du graphique
-     * @param options Options pour la vidéo (width, fps, bitrate)
-     * @returns Promise d'un Blob contenant la vidéo
+     * Utilise l'encodage frame-by-frame pour une fluidité parfaite
      */
     async generateVideo(
         config: GraphConfig,
@@ -22,8 +29,14 @@ class GraphVideoService {
         const {
             width = 1920,
             fps = 60,
-            videoBitrate = 10000000, // 10 Mbps pour une haute qualité
+            videoBitrate = 25000000,
+            signal,
         } = options;
+
+        // Vérifier si annulé dès le début
+        if (signal?.aborted) {
+            throw new DOMException("Génération annulée", "AbortError");
+        }
 
         // Calculer la hauteur selon le device
         const isDesktop = config.animation.device === "desktop";
@@ -33,8 +46,12 @@ class GraphVideoService {
 
         // Créer un canvas offscreen
         const canvas = this.createOffscreenCanvas(width, height);
+        const ctx = canvas.getContext("2d", {
+            alpha: false,
+            willReadFrequently: true,
+        })!;
 
-        // Créer une instance du chart avec les paramètres de la config
+        // Créer une instance du chart
         const chart = new StockChart(canvas.id, {
             animationSpeed: config.animation.speed,
             revealMode: config.animation.revealMode,
@@ -43,70 +60,106 @@ class GraphVideoService {
 
         try {
             // Charger les données
-            const processedData = await graphDataService.loadAndProcessData(
-                config
-            );
+            const processedData =
+                await graphDataService.loadAndProcessData(config);
             chart.setData(processedData);
 
             // Précharger les logos
             await chart.preloadLogos();
 
-            // Override drawGrid pour utiliser un fond blanc au lieu de gris
-            const originalDrawGrid = chart.drawGrid.bind(chart);
-            chart.drawGrid = this.createWhiteBackgroundDrawGrid(
-                chart,
-                originalDrawGrid
-            );
+            // Override drawGrid pour utiliser un fond blanc
+            chart.drawGrid = this.createWhiteBackgroundDrawGrid(chart);
 
-            // Créer le stream vidéo
-            const stream = canvas.captureStream(fps);
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: this.getSupportedMimeType(),
-                videoBitsPerSecond: videoBitrate,
-            });
-
-            const chunks: Blob[] = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    chunks.push(event.data);
-                }
-            };
-
-            // Démarrer l'enregistrement
-            mediaRecorder.start();
-
-            // Reset l'animation au début
+            // Reset l'animation
             chart.currentFrame = 0;
             chart.calculateInitialScale();
-            chart.isAnimating = true;
 
-            // Calculer le nombre de frames total basé sur la durée de l'animation
             const totalFrames = chart.totalFrames;
-            const frameDuration = 1000 / fps; // Durée d'une frame en ms
 
-            // Animer frame par frame
-            await this.animateChart(chart, totalFrames, frameDuration);
+            // Calculer la durée de l'animation (en secondes)
+            // L'animation originale tourne à ~60 FPS avec animationSpeed
+            const animationDurationSec =
+                totalFrames / chart.animationSpeed / 60;
+            const totalVideoFrames = Math.ceil(animationDurationSec * fps);
 
-            // Arrêter l'enregistrement
-            mediaRecorder.stop();
-
-            // Attendre que toutes les données soient disponibles
-            const videoBlob = await new Promise<Blob>((resolve, reject) => {
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, {
-                        type: this.getSupportedMimeType(),
-                    });
-                    resolve(blob);
-                };
-                mediaRecorder.onerror = reject;
+            // Créer le muxer WebM avec VideoEncoder
+            const muxer = new Muxer({
+                target: new ArrayBufferTarget(),
+                video: {
+                    codec: "V_VP9",
+                    width,
+                    height,
+                    frameRate: fps,
+                },
+                firstTimestampBehavior: "offset",
             });
+
+            // Créer l'encodeur vidéo
+            const encoder = new VideoEncoder({
+                output: (chunk, meta) => {
+                    muxer.addVideoChunk(chunk, meta);
+                },
+                error: (e) => {
+                    console.error("Encoder error:", e);
+                },
+            });
+
+            encoder.configure({
+                codec: "vp09.00.10.08",
+                width,
+                height,
+                bitrate: videoBitrate,
+                framerate: fps,
+            });
+
+            // Générer chaque frame
+            for (
+                let frameIndex = 0;
+                frameIndex <= totalVideoFrames;
+                frameIndex++
+            ) {
+                // Vérifier si annulé
+                if (signal?.aborted) {
+                    encoder.close();
+                    throw new DOMException("Génération annulée", "AbortError");
+                }
+
+                // Calculer la progression de l'animation
+                const progress = frameIndex / totalVideoFrames;
+                chart.currentFrame = Math.min(progress * totalFrames, totalFrames);
+
+                // Dessiner la frame
+                chart.draw();
+
+                // Créer un VideoFrame à partir du canvas
+                const frame = new VideoFrame(canvas, {
+                    timestamp: (frameIndex * 1000000) / fps, // timestamp en microsecondes
+                    duration: 1000000 / fps,
+                });
+
+                // Encoder la frame (keyframe toutes les 60 frames)
+                const keyFrame = frameIndex % 60 === 0;
+                encoder.encode(frame, { keyFrame });
+
+                // Libérer le frame
+                frame.close();
+            }
+
+            // Attendre que l'encodage soit terminé
+            await encoder.flush();
+            encoder.close();
+
+            // Finaliser le muxer
+            muxer.finalize();
+
+            // Récupérer le buffer
+            const { buffer } = muxer.target as ArrayBufferTarget;
 
             // Nettoyer
             chart.destroy();
             this.removeOffscreenCanvas(canvas);
 
-            return videoBlob;
+            return new Blob([buffer], { type: "video/webm" });
         } catch (error) {
             chart.destroy();
             this.removeOffscreenCanvas(canvas);
@@ -115,46 +168,10 @@ class GraphVideoService {
     }
 
     /**
-     * Anime le chart frame par frame
-     */
-    private async animateChart(
-        chart: StockChart,
-        totalFrames: number,
-        frameDuration: number
-    ): Promise<void> {
-        return new Promise((resolve) => {
-            const animate = () => {
-                if (chart.currentFrame < totalFrames) {
-                    chart.draw();
-                    chart.currentFrame += chart.animationSpeed;
-
-                    if (chart.currentFrame > totalFrames) {
-                        chart.currentFrame = totalFrames;
-                    }
-
-                    setTimeout(() => {
-                        requestAnimationFrame(animate);
-                    }, frameDuration);
-                } else {
-                    // Dessiner la dernière frame
-                    chart.currentFrame = totalFrames;
-                    chart.draw();
-
-                    // Attendre un peu avant de terminer pour s'assurer que la dernière frame est bien capturée
-                    setTimeout(resolve, frameDuration * 10);
-                }
-            };
-
-            animate();
-        });
-    }
-
-    /**
      * Crée une fonction drawGrid personnalisée avec fond blanc
      */
     private createWhiteBackgroundDrawGrid(
-        chart: StockChart,
-        originalDrawGrid: (chartWidth: number, chartHeight: number) => void
+        chart: StockChart
     ): (chartWidth: number, chartHeight: number) => void {
         return function (
             this: StockChart,
@@ -254,26 +271,6 @@ class GraphVideoService {
     }
 
     /**
-     * Retourne le type MIME supporté pour l'enregistrement vidéo
-     */
-    private getSupportedMimeType(): string {
-        const types = [
-            "video/webm;codecs=vp9",
-            "video/webm;codecs=vp8",
-            "video/webm",
-            "video/mp4",
-        ];
-
-        for (const type of types) {
-            if (MediaRecorder.isTypeSupported(type)) {
-                return type;
-            }
-        }
-
-        return "video/webm";
-    }
-
-    /**
      * Crée un canvas offscreen dans le DOM
      */
     private createOffscreenCanvas(
@@ -302,9 +299,6 @@ class GraphVideoService {
 
     /**
      * Génère une URL pour télécharger la vidéo
-     * @param config Configuration du graphique
-     * @param options Options pour la vidéo
-     * @returns Promise d'une URL de téléchargement
      */
     async generateVideoUrl(
         config: GraphConfig,
@@ -316,9 +310,6 @@ class GraphVideoService {
 
     /**
      * Télécharge directement la vidéo générée
-     * @param config Configuration du graphique
-     * @param filename Nom du fichier de sortie
-     * @param options Options pour la vidéo
      */
     async downloadVideo(
         config: GraphConfig,
@@ -335,7 +326,6 @@ class GraphVideoService {
         a.click();
         document.body.removeChild(a);
 
-        // Nettoyer l'URL après un délai
         setTimeout(() => URL.revokeObjectURL(url), 100);
     }
 }

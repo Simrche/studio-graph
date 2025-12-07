@@ -5,6 +5,7 @@ export const useGraphVideo = () => {
     const isGenerating = ref(false);
     const progress = ref(0);
     const error = ref<string | null>(null);
+    let abortController: AbortController | null = null;
 
     /**
      * Génère une vidéo du graphique
@@ -52,12 +53,20 @@ export const useGraphVideo = () => {
         isGenerating.value = true;
         error.value = null;
         progress.value = 0;
+        abortController = new AbortController();
 
         try {
-            await graphVideoService.downloadVideo(config, filename, options);
+            await graphVideoService.downloadVideo(config, filename, {
+                ...options,
+                signal: abortController.signal,
+            });
             progress.value = 100;
             return true;
         } catch (err) {
+            // Ne pas logger l'erreur si c'est une annulation
+            if (err instanceof DOMException && err.name === "AbortError") {
+                return false;
+            }
             console.error("Erreur lors du téléchargement de la vidéo:", err);
             error.value =
                 err instanceof Error
@@ -66,6 +75,17 @@ export const useGraphVideo = () => {
             return false;
         } finally {
             isGenerating.value = false;
+            abortController = null;
+        }
+    };
+
+    /**
+     * Annule la génération de vidéo en cours
+     */
+    const cancel = () => {
+        if (abortController) {
+            abortController.abort();
+            abortController = null;
         }
     };
 
@@ -119,6 +139,7 @@ export const useGraphVideo = () => {
         generateVideo,
         downloadVideo,
         generateVideoUrl,
+        cancel,
         reset,
     };
 };
