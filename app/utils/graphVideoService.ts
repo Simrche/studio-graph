@@ -44,8 +44,9 @@ class GraphVideoService {
             ? Math.round((width * 9) / 16)
             : Math.round((width * 16) / 9);
 
-        // Créer un canvas offscreen
-        const canvas = this.createOffscreenCanvas(width, height);
+        // Créer un canvas offscreen (avec wrapper pour mobile)
+        const isMobile = !isDesktop;
+        const canvas = this.createOffscreenCanvas(width, height, isMobile);
 
         // Créer une instance du chart
         const chart = new StockChart(canvas.id, {
@@ -54,10 +55,24 @@ class GraphVideoService {
             device: config.animation.device,
         });
 
+        // Pour le mobile, on applique un scale pour que les éléments soient plus gros
+        if (!isDesktop) {
+            canvas.width = width;
+            canvas.height = height;
+            chart.ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            const previewWidth = 350;
+            const scaleFactor = width / previewWidth;
+            chart.ctx.scale(scaleFactor, scaleFactor);
+            chart.width = previewWidth;
+            chart.height = Math.round(previewWidth * (16 / 9));
+        }
+
         try {
             // Charger les données
-            const processedData =
-                await graphDataService.loadAndProcessData(config);
+            const processedData = await graphDataService.loadAndProcessData(
+                config
+            );
             chart.setData(processedData);
 
             // Précharger les logos
@@ -162,12 +177,12 @@ class GraphVideoService {
 
             // Nettoyer
             chart.destroy();
-            this.removeOffscreenCanvas(canvas);
+            this.removeOffscreenCanvas(canvas, isMobile);
 
             return new Blob([buffer], { type: "video/webm" });
         } catch (error) {
             chart.destroy();
-            this.removeOffscreenCanvas(canvas);
+            this.removeOffscreenCanvas(canvas, isMobile);
             throw error;
         }
     }
@@ -277,28 +292,59 @@ class GraphVideoService {
 
     /**
      * Crée un canvas offscreen dans le DOM
+     * Pour mobile, utilise un wrapper parent car StockChart.setupCanvas() utilise parent.getBoundingClientRect()
      */
     private createOffscreenCanvas(
         width: number,
-        height: number
+        height: number,
+        useWrapper: boolean = false
     ): HTMLCanvasElement {
         const canvas = document.createElement("canvas");
         canvas.id = `video-canvas-${Date.now()}-${Math.random()}`;
         canvas.width = width;
         canvas.height = height;
-        canvas.style.position = "absolute";
-        canvas.style.left = "-9999px";
-        canvas.style.top = "-9999px";
-        document.body.appendChild(canvas);
+
+        if (useWrapper) {
+            // Mobile: créer un wrapper parent avec les dimensions exactes
+            const wrapper = document.createElement("div");
+            wrapper.id = `video-canvas-wrapper-${Date.now()}-${Math.random()}`;
+            wrapper.style.position = "absolute";
+            wrapper.style.left = "-9999px";
+            wrapper.style.top = "-9999px";
+            wrapper.style.width = `${width}px`;
+            wrapper.style.height = `${height}px`;
+            document.body.appendChild(wrapper);
+
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+            wrapper.appendChild(canvas);
+        } else {
+            // Desktop: canvas directement dans le body
+            canvas.style.position = "absolute";
+            canvas.style.left = "-9999px";
+            canvas.style.top = "-9999px";
+            document.body.appendChild(canvas);
+        }
+
         return canvas;
     }
 
     /**
      * Supprime le canvas offscreen du DOM
      */
-    private removeOffscreenCanvas(canvas: HTMLCanvasElement): void {
-        if (canvas.parentNode) {
-            canvas.parentNode.removeChild(canvas);
+    private removeOffscreenCanvas(
+        canvas: HTMLCanvasElement,
+        hasWrapper: boolean = false
+    ): void {
+        if (hasWrapper) {
+            const wrapper = canvas.parentNode;
+            if (wrapper && wrapper.parentNode) {
+                wrapper.parentNode.removeChild(wrapper);
+            }
+        } else {
+            if (canvas.parentNode) {
+                canvas.parentNode.removeChild(canvas);
+            }
         }
     }
 
