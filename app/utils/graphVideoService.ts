@@ -46,10 +46,6 @@ class GraphVideoService {
 
         // Créer un canvas offscreen
         const canvas = this.createOffscreenCanvas(width, height);
-        const ctx = canvas.getContext("2d", {
-            alpha: false,
-            willReadFrequently: true,
-        })!;
 
         // Créer une instance du chart
         const chart = new StockChart(canvas.id, {
@@ -124,9 +120,18 @@ class GraphVideoService {
                     throw new DOMException("Génération annulée", "AbortError");
                 }
 
+                // Attendre si la file d'attente de l'encodeur est trop pleine
+                // Cela évite les problèmes de mémoire et de freeze
+                while (encoder.encodeQueueSize > 10) {
+                    await new Promise((resolve) => setTimeout(resolve, 1));
+                }
+
                 // Calculer la progression de l'animation
                 const progress = frameIndex / totalVideoFrames;
-                chart.currentFrame = Math.min(progress * totalFrames, totalFrames);
+                chart.currentFrame = Math.min(
+                    progress * totalFrames,
+                    totalFrames
+                );
 
                 // Dessiner la frame
                 chart.draw();
@@ -141,7 +146,7 @@ class GraphVideoService {
                 const keyFrame = frameIndex % 60 === 0;
                 encoder.encode(frame, { keyFrame });
 
-                // Libérer le frame
+                // Libérer le frame immédiatement
                 frame.close();
             }
 
@@ -171,7 +176,7 @@ class GraphVideoService {
      * Crée une fonction drawGrid personnalisée avec fond blanc
      */
     private createWhiteBackgroundDrawGrid(
-        chart: StockChart
+        _chart: StockChart
     ): (chartWidth: number, chartHeight: number) => void {
         return function (
             this: StockChart,
