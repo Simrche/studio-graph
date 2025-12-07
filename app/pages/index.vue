@@ -163,8 +163,8 @@ const { loading: isCreating, handle: createNewGraph } = useLoading(
             });
         }
 
-        showCreateModal.value = false;
-        navigateTo(`/studio?id=${data.id}`);
+        // Naviguer d'abord, le modal sera détruit avec la page
+        await navigateTo(`/studio?id=${data.id}`);
     }
 );
 
