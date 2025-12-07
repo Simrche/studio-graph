@@ -1,14 +1,14 @@
 <template>
     <div
-        class="flex items-center gap-4 px-6 py-4 bg-white border-b border-slate-200"
+        class="flex items-center gap-4 px-6 py-2 bg-white border-b border-slate-200"
     >
         <!-- Device Toggle -->
         <div class="flex items-center gap-3">
-            <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+            <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-lg h-10">
                 <button
                     @click="device = 'mobile'"
                     :class="[
-                        'flex items-center justify-center px-3 py-1.5 rounded-md transition-all',
+                        'flex items-center justify-center w-8 h-8 rounded-md transition-all',
                         device === 'mobile'
                             ? 'bg-white text-purple-600 shadow-sm'
                             : 'text-slate-600 hover:text-slate-900',
@@ -20,7 +20,7 @@
                 <button
                     @click="device = 'desktop'"
                     :class="[
-                        'flex items-center justify-center px-3 py-1.5 rounded-md transition-all',
+                        'flex items-center justify-center w-8 h-8 rounded-md transition-all',
                         device === 'desktop'
                             ? 'bg-white text-purple-600 shadow-sm'
                             : 'text-slate-600 hover:text-slate-900',

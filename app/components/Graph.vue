@@ -376,7 +376,7 @@ onUnmounted(() => {
 .legend-panel {
     background: white;
     border-top: 1px solid #e2e8f0;
-    padding: 2rem;
+    padding: 1rem;
 }
 
 .legend-panel.mobile-mode {
