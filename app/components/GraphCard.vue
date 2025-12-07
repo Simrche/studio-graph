@@ -11,7 +11,7 @@
                 </h3>
                 <p class="text-sm text-white/50">
                     {{ tickerCount }} tickers ·
-                    {{ formatDate(new Date(graph.created_at)) }}
+                    {{ formatDate(graph.created_at) }}
                 </p>
             </div>
             <button
@@ -88,8 +88,11 @@ defineEmits<{
 
 const tickerCount = computed(() => props.graph.config.tickers.length);
 
-function formatDate(date: Date): string {
+function formatDate(dateOrString: Date | string): string {
     const now = new Date();
+    const date = new Date(dateOrString);
+    date.setHours(0, 0, 0, 0);
+
     const diffTime = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
