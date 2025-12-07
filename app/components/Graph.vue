@@ -227,6 +227,7 @@ const initializeGraph = async () => {
         chart = new StockChart("graphCanvas", {
             animationSpeed: config.value.animation.speed,
             revealMode: config.value.animation.revealMode,
+            device: config.value.animation.device,
         });
 
         // Calculer les données à partir du JSON et de la config
