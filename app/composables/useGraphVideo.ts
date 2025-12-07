@@ -4,6 +4,7 @@ import { graphVideoService } from "~/utils/graphVideoService";
 export const useGraphVideo = () => {
     const isGenerating = ref(false);
     const progress = ref(0);
+    const estimatedTimeRemaining = ref(0);
     const error = ref<string | null>(null);
     let abortController: AbortController | null = null;
 
@@ -53,14 +54,20 @@ export const useGraphVideo = () => {
         isGenerating.value = true;
         error.value = null;
         progress.value = 0;
+        estimatedTimeRemaining.value = 0;
         abortController = new AbortController();
 
         try {
             await graphVideoService.downloadVideo(config, filename, {
                 ...options,
                 signal: abortController.signal,
+                onProgress: (prog, timeRemaining) => {
+                    progress.value = prog;
+                    estimatedTimeRemaining.value = timeRemaining;
+                },
             });
             progress.value = 100;
+            estimatedTimeRemaining.value = 0;
             return true;
         } catch (err) {
             // Ne pas logger l'erreur si c'est une annulation
@@ -129,12 +136,14 @@ export const useGraphVideo = () => {
     const reset = () => {
         isGenerating.value = false;
         progress.value = 0;
+        estimatedTimeRemaining.value = 0;
         error.value = null;
     };
 
     return {
         isGenerating: readonly(isGenerating),
         progress: readonly(progress),
+        estimatedTimeRemaining: readonly(estimatedTimeRemaining),
         error: readonly(error),
         generateVideo,
         downloadVideo,

@@ -15,6 +15,7 @@ interface VideoOptions {
     fps?: number;
     videoBitrate?: number;
     signal?: AbortSignal;
+    onProgress?: (progress: number, estimatedTimeRemaining: number) => void;
 }
 
 class GraphVideoService {
@@ -31,6 +32,7 @@ class GraphVideoService {
             fps = 60,
             videoBitrate = 25000000,
             signal,
+            onProgress,
         } = options;
 
         // Vérifier si annulé dès le début
@@ -123,6 +125,10 @@ class GraphVideoService {
                 framerate: fps,
             });
 
+            // Variables pour estimer le temps restant
+            const startTime = performance.now();
+            let lastProgressUpdate = 0;
+
             // Générer chaque frame
             for (
                 let frameIndex = 0;
@@ -143,6 +149,18 @@ class GraphVideoService {
 
                 // Calculer la progression de l'animation
                 const progress = frameIndex / totalVideoFrames;
+
+                // Mettre à jour la progression toutes les 2%
+                if (onProgress && progress - lastProgressUpdate >= 0.02) {
+                    lastProgressUpdate = progress;
+                    const elapsedTime = performance.now() - startTime;
+                    const estimatedTotalTime = elapsedTime / progress;
+                    const estimatedTimeRemaining = Math.max(
+                        0,
+                        (estimatedTotalTime - elapsedTime) / 1000
+                    );
+                    onProgress(progress * 100, estimatedTimeRemaining);
+                }
                 chart.currentFrame = Math.min(
                     progress * totalFrames,
                     totalFrames
