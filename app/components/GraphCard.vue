@@ -23,30 +23,35 @@
         </div>
 
         <!-- Tickers Preview -->
-        <div class="flex items-center gap-2 mb-4">
-            <div
-                v-for="ticker in graph.config.tickers.slice(0, 4)"
-                :key="ticker.symbol"
-                class="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg"
-            >
-                <img
-                    v-if="ticker.logoUrl"
-                    :src="ticker.logoUrl"
-                    :alt="ticker.symbol"
-                    class="w-4 h-4 rounded"
-                />
-                <span class="text-xs text-white/80">{{ ticker.symbol }}</span>
-            </div>
-            <div
-                v-if="graph.config.tickers.length > 4"
-                class="text-xs text-white/50"
-            >
-                +{{ graph.config.tickers.length - 4 }}
+        <div class="flex items-center gap-2 mb-4 min-h-[32px]">
+            <template v-if="graph.config.tickers.length > 0">
+                <div
+                    v-for="ticker in graph.config.tickers.slice(0, 4)"
+                    :key="ticker.symbol"
+                    class="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg"
+                >
+                    <img
+                        v-if="ticker.logoUrl"
+                        :src="ticker.logoUrl"
+                        :alt="ticker.symbol"
+                        class="w-4 h-4 rounded"
+                    />
+                    <span class="text-xs text-white/80">{{ ticker.symbol }}</span>
+                </div>
+                <div
+                    v-if="graph.config.tickers.length > 4"
+                    class="text-xs text-white/50"
+                >
+                    +{{ graph.config.tickers.length - 4 }}
+                </div>
+            </template>
+            <div v-else class="text-xs text-white/30 italic">
+                Aucun ticker
             </div>
         </div>
 
         <!-- Chart Preview -->
-        <div class="bg-white/5 rounded-lg overflow-hidden">
+        <div class="bg-white/5 rounded-lg overflow-hidden min-h-[200px]">
             <img
                 v-if="graph.preview_url"
                 :src="graph.preview_url"
@@ -55,7 +60,7 @@
             />
             <div
                 v-else
-                class="w-full h-full flex items-center justify-center text-white/30"
+                class="w-full h-full min-h-[200px] flex items-center justify-center text-white/30"
             >
                 <div class="flex flex-col items-center gap-2">
                     <PhChartLine :size="32" weight="thin" />

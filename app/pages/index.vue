@@ -91,7 +91,8 @@ const { data: graphs, refresh } = await useAsyncData("graphs", async () => {
     const { data, error } = await supabase
         .from("graphs")
         .select("*")
-        .is("deleted_at", null);
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false });
 
     if (error) {
         throw createError({ statusCode: 500, statusMessage: error.message });
