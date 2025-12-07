@@ -98,12 +98,104 @@ class GraphPreviewService {
             chart.currentMaxScale = chart.targetMaxScale;
             chart.currentMinScale = chart.targetMinScale;
 
-            // Remplir tout le canvas de blanc avant de dessiner
-            chart.ctx.fillStyle = "#ffffff";
-            chart.ctx.fillRect(0, 0, chart.width, chart.height);
+            // Sauvegarder le drawGrid original
+            const originalDrawGrid = chart.drawGrid.bind(chart);
+
+            // Override drawGrid pour utiliser un fond blanc
+            chart.drawGrid = function(chartWidth: number, chartHeight: number) {
+                const ctx = this.ctx;
+
+                // Remplir tout le canvas de blanc (pas seulement la zone du graphique)
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, this.width, this.height);
+
+                // Appeler le drawGrid original mais sans le fillRect du fond gris
+                ctx.strokeStyle = "#e0e0e0";
+                ctx.lineWidth = 1;
+
+                const steps = 10;
+                const minValue = this.currentMinScale;
+                const maxValue = this.currentMaxScale;
+                const range = maxValue - minValue;
+
+                for (let i = 0; i <= steps; i++) {
+                    const y = this.padding.top + (chartHeight * i) / steps;
+                    const value = maxValue - (range * i) / steps;
+
+                    ctx.beginPath();
+                    ctx.moveTo(this.padding.left, y);
+                    ctx.lineTo(this.padding.left + chartWidth, y);
+
+                    if (Math.abs(value) < range / steps / 2) {
+                        ctx.strokeStyle = "#999";
+                        ctx.lineWidth = 2;
+                    } else {
+                        ctx.strokeStyle = "#e0e0e0";
+                        ctx.lineWidth = 1;
+                    }
+                    ctx.stroke();
+
+                    ctx.fillStyle = "#666";
+                    ctx.font = "12px sans-serif";
+                    ctx.textAlign = "right";
+
+                    let labelText;
+                    if (this.dataFormat === "investment") {
+                        labelText = "$" + this.formatNumber(value);
+                    } else if (this.dataFormat === "percentage") {
+                        labelText = value.toFixed(0) + "%";
+                    } else {
+                        labelText = this.formatNumber(value);
+                    }
+
+                    ctx.fillText(labelText, this.padding.left - 10, y + 4);
+                }
+
+                const dateDisplayStep = Math.ceil(this.originalDataLength / 10);
+                ctx.fillStyle = "#666";
+                ctx.font = "11px sans-serif";
+                ctx.textAlign = "center";
+
+                const visiblePoints = Math.floor(this.currentFrame);
+
+                for (
+                    let dateIdx = 0;
+                    dateIdx < this.originalDataLength;
+                    dateIdx += dateDisplayStep
+                ) {
+                    const frameIdx = dateIdx * this.interpolationSteps;
+
+                    if (frameIdx <= visiblePoints) {
+                        let x;
+                        if (this.revealMode && visiblePoints > 1) {
+                            x =
+                                this.padding.left +
+                                (chartWidth * frameIdx) / (visiblePoints - 1);
+                        } else {
+                            x =
+                                this.padding.left +
+                                (chartWidth * frameIdx) / (this.totalFrames - 1);
+                        }
+
+                        if (dateIdx < this.dates.length) {
+                            const dateText = this.dates[dateIdx];
+                            if (dateText) {
+                                ctx.save();
+                                ctx.translate(x, this.padding.top + chartHeight + 20);
+                                ctx.rotate(-Math.PI / 4);
+                                ctx.fillText(dateText, 0, 0);
+                                ctx.restore();
+                            }
+                        }
+                    }
+                }
+            };
 
             // Dessiner le graphique avec l'échelle correcte
             chart.draw();
+
+            // Restaurer le drawGrid original
+            chart.drawGrid = originalDrawGrid;
 
             // Convertir le canvas en blob
             const blob = await this.canvasToBlob(canvas);
