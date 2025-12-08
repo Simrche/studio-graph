@@ -16,6 +16,7 @@
             <Sidebar
                 v-model="graphData.config"
                 v-model:name="graphData.name"
+                :type="graphData.type"
                 :has-changes="hasChanges"
                 :loading="applyLoading"
                 @apply="apply"
