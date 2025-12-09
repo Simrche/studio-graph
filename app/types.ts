@@ -45,6 +45,20 @@ export interface Graph {
     type: GraphType;
 }
 
+export interface SpreadsheetCell {
+    [column: string]: string | number; // A, B, C, ... AA, AB, etc.
+}
+
+export interface DefaultGraphConfig {
+    cells: SpreadsheetCell[]; // Chaque élément = une ligne
+    labelColumn: string; // Ex: "A"
+    imageColumn: string; // Ex: "B"
+    colorColumn?: string; // Ex: "C" - Couleur de la ligne (nom CSS ou HEX)
+    dataRangeStart: string; // Ex: "D"
+    dataRangeEnd: string; // Ex: "F"
+    valueSuffix?: string; // Ex: "%", "€", "k"
+}
+
 export interface GraphConfig {
     animation: {
         speed: number;
@@ -57,6 +71,7 @@ export interface GraphConfig {
         initialAmount: number;
     };
     tickers: TickerData[];
+    default?: DefaultGraphConfig;
 }
 
 /**

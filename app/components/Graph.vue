@@ -5,8 +5,8 @@
             <GraphLoader />
         </div>
 
-        <!-- Message sans ticker - visible seulement si aucun ticker -->
-        <div v-if="!isLoading && config.tickers.length === 0">
+        <!-- Message sans données - visible seulement si aucune donnée -->
+        <div v-if="!isLoading && !hasData">
             <div class="flex items-center justify-center w-full h-full">
                 <div
                     class="flex flex-col items-center gap-4 text-center justify-center px-8"
@@ -19,7 +19,7 @@
                     </div>
                     <div class="flex flex-col gap-2">
                         <h3 class="text-xl font-semibold text-slate-700">
-                            Aucun ticker sélectionné
+                            {{ type === 'default' ? 'Aucune donnée' : 'Aucun ticker sélectionné' }}
                         </h3>
                         <p
                             class="text-slate-500 max-w-md"
@@ -29,8 +29,10 @@
                                 align-items: center;
                             "
                         >
-                            Ajoutez des tickers dans la barre latérale pour
-                            commencer à visualiser les données
+                            {{ type === 'default'
+                                ? 'Remplissez le spreadsheet avec vos données pour visualiser le graphique'
+                                : 'Ajoutez des tickers dans la barre latérale pour commencer à visualiser les données'
+                            }}
                         </p>
                     </div>
                 </div>
@@ -39,7 +41,7 @@
 
         <!-- Graph Controls - visible seulement si des données sont chargées -->
         <GraphControls
-            v-if="!isLoading && config.tickers.length > 0"
+            v-if="!isLoading && hasData"
             :is-playing="isAnimating"
             :is-exporting="isExportingVideo"
             v-model:speed="config.animation.speed"
@@ -54,7 +56,7 @@
         <div
             class="canvas-wrapper"
             :class="{
-                hidden: config.tickers.length === 0,
+                hidden: !hasData,
                 'mobile-mode': config.animation.device === 'mobile',
             }"
             :style="{ aspectRatio }"
@@ -66,7 +68,7 @@
         <div
             class="legend-panel"
             :class="{
-                hidden: isLoading || config.tickers.length === 0,
+                hidden: isLoading || !hasData,
                 'mobile-mode': config.animation.device === 'mobile',
             }"
         >
@@ -110,12 +112,71 @@
 
 <script setup lang="ts">
 import { PhChartLine } from "@phosphor-icons/vue";
-import type { GraphConfig } from "~/types";
+import type { GraphConfig, GraphType } from "~/types";
 import { StockChart } from "~/utils/StockChart";
 import { graphDataService } from "~/utils/graphDataService";
 
+const props = defineProps<{
+    type?: GraphType;
+}>();
+
 const config = defineModel<GraphConfig>("config", {
     required: true,
+});
+
+// Type du graphique (default = spreadsheet, stocks = API)
+const type = computed(() => props.type ?? "stocks");
+
+// Helper pour obtenir l'index d'une colonne
+const getColumnIndex = (name: string): number => {
+    let index = 0;
+    for (let i = 0; i < name.length; i++) {
+        index = index * 26 + (name.charCodeAt(i) - 64);
+    }
+    return index - 1;
+};
+
+// Helper pour obtenir le nom d'une colonne
+const getColumnName = (index: number): string => {
+    let name = "";
+    let num = index;
+    while (num >= 0) {
+        name = String.fromCharCode(65 + (num % 26)) + name;
+        num = Math.floor(num / 26) - 1;
+    }
+    return name;
+};
+
+// Vérifier si on a des données à afficher
+const hasData = computed(() => {
+    if (type.value === "default") {
+        const defaultConfig = config.value.default;
+        if (!defaultConfig) return false;
+
+        const cells = defaultConfig.cells ?? [];
+        const labelCol = defaultConfig.labelColumn ?? "A";
+        const rangeStart = defaultConfig.dataRangeStart ?? "C";
+        const rangeEnd = defaultConfig.dataRangeEnd ?? "Z";
+        const startIndex = getColumnIndex(rangeStart);
+        const endIndex = getColumnIndex(rangeEnd);
+
+        // On vérifie qu'il y a au moins une ligne avec un label ET des données
+        return cells.some((row) => {
+            const label = row[labelCol];
+            if (!label || String(label).trim() === "") return false;
+
+            // Vérifier qu'il y a au moins une valeur dans la plage de données
+            for (let i = startIndex; i <= endIndex; i++) {
+                const colName = getColumnName(i);
+                const value = row[colName];
+                if (value !== undefined && value !== null && String(value).trim() !== "") {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+    return config.value.tickers.length > 0;
 });
 
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -261,8 +322,8 @@ defineExpose({
 });
 
 const initializeGraph = async () => {
-    // Si aucun ticker n'est sélectionné, ne pas charger
-    if (config.value.tickers.length === 0) {
+    // Si aucune donnée, ne pas charger
+    if (!hasData.value) {
         isLoading.value = false;
         return;
     }
@@ -287,7 +348,8 @@ const initializeGraph = async () => {
 
         // Calculer les données à partir du JSON et de la config
         const processedData = await graphDataService.loadAndProcessData(
-            config.value
+            config.value,
+            props.type ?? "stocks"
         );
 
         // Charger les données dans le chart

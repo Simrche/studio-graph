@@ -51,6 +51,7 @@ export class StockChart {
     logos: Record<string, HTMLImageElement | null> = {};
     interpolationSteps = 5;
     dataFormat = "percentage";
+    valueSuffix = "";
     investmentAmount = 10000;
     originalDataLength = 0;
     width = 0;
@@ -125,11 +126,13 @@ export class StockChart {
         dates: string[];
         dataFormat: string;
         investmentAmount: number;
+        valueSuffix?: string;
     }) {
         this.dates = processedData.dates;
         this.originalDataLength = this.dates.length;
         this.dataFormat = processedData.dataFormat;
         this.investmentAmount = processedData.investmentAmount;
+        this.valueSuffix = processedData.valueSuffix ?? "";
         this.data = [];
         this.maxScale = -Infinity;
         this.minScale = Infinity;
@@ -559,6 +562,8 @@ export class StockChart {
                 labelText = "$" + this.formatNumber(value);
             } else if (this.dataFormat === "percentage") {
                 labelText = value.toFixed(0) + "%";
+            } else if (this.dataFormat === "custom" && this.valueSuffix) {
+                labelText = this.formatNumber(value) + this.valueSuffix;
             } else {
                 labelText = this.formatNumber(value);
             }
@@ -708,6 +713,8 @@ export class StockChart {
                 valueText = "$" + this.formatNumber(currentValue);
             } else if (this.dataFormat === "percentage") {
                 valueText = currentValue.toFixed(0) + "%";
+            } else if (this.dataFormat === "custom" && this.valueSuffix) {
+                valueText = this.formatNumber(currentValue) + this.valueSuffix;
             } else {
                 valueText = this.formatNumber(currentValue);
             }

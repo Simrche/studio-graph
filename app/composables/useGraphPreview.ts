@@ -22,8 +22,6 @@ export const useGraphPreview = () => {
             width
         );
 
-        console.log(previewBlob);
-
         // Upload de la preview sur Supabase Storage
         const fileName = `graph-${graphId}-${Date.now()}.png`;
         const { error: uploadError } = await supabase.storage

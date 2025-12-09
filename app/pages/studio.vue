@@ -1,6 +1,6 @@
 <template>
     <div
-        class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden"
+        class="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden"
     >
         <BackgroundAnimation />
 
@@ -23,11 +23,81 @@
             />
 
             <!-- Main Canvas Area -->
-            <main
-                class="flex-1 p-8 flex flex-col items-center justify-center min-w-0 overflow-auto"
-            >
-                <div class="w-full max-w-full flex justify-center items-center">
-                    <Graph ref="graphRef" v-model:config="graphData.config" />
+            <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <!-- Toggle pour mode default -->
+                <div
+                    v-if="graphData.type === 'default'"
+                    class="flex items-center justify-center gap-2 p-4 border-b border-white/10"
+                >
+                    <button
+                        @click="viewMode = 'preview'"
+                        :class="[
+                            'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                            viewMode === 'preview'
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white',
+                        ]"
+                    >
+                        <PhChartLine :size="18" />
+                        Graphique
+                    </button>
+                    <button
+                        @click="viewMode = 'data'"
+                        :class="[
+                            'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                            viewMode === 'data'
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white',
+                        ]"
+                    >
+                        <PhTable :size="18" />
+                        Données
+                    </button>
+                </div>
+
+                <!-- Content area -->
+                <div
+                    :class="[
+                        'flex-1 min-h-0 flex flex-col',
+                        viewMode === 'data' && graphData.type === 'default'
+                            ? 'p-4'
+                            : 'p-8 items-center justify-center overflow-auto',
+                    ]"
+                >
+                    <!-- Preview mode ou type stocks -->
+                    <div
+                        v-if="
+                            graphData.type === 'stocks' ||
+                            viewMode === 'preview'
+                        "
+                        class="w-full max-w-full flex justify-center items-center"
+                    >
+                        <Graph
+                            ref="graphRef"
+                            v-model:config="graphData.config"
+                            :type="graphData.type"
+                        />
+                    </div>
+
+                    <!-- Data mode (spreadsheet) -->
+                    <DataSpreadsheet
+                        v-else
+                        class="flex-1 min-h-0"
+                        v-model="spreadsheetCells"
+                        :label-column="
+                            graphData.config.default?.labelColumn ?? 'A'
+                        "
+                        :image-column="
+                            graphData.config.default?.imageColumn ?? 'B'
+                        "
+                        :color-column="graphData.config.default?.colorColumn"
+                        :data-range-start="
+                            graphData.config.default?.dataRangeStart ?? 'C'
+                        "
+                        :data-range-end="
+                            graphData.config.default?.dataRangeEnd ?? 'Z'
+                        "
+                    />
                 </div>
             </main>
         </template>
@@ -37,7 +107,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Graph } from "~/types";
+import { PhChartLine, PhTable } from "@phosphor-icons/vue";
+import type { Graph, SpreadsheetCell } from "~/types";
 import { useDebounceFn } from "@vueuse/core";
 
 const supabase = useSupabaseClient<any>();
@@ -52,6 +123,26 @@ const graphRef = ref<{
 
 const loading = ref(true);
 const graphData = ref<Graph | null>(null);
+const viewMode = ref<"preview" | "data">("data");
+
+// Computed pour les cells du spreadsheet avec synchro bidirectionnelle
+const spreadsheetCells = computed({
+    get: () => graphData.value?.config.default?.cells ?? [],
+    set: (value: SpreadsheetCell[]) => {
+        if (graphData.value) {
+            if (!graphData.value.config.default) {
+                graphData.value.config.default = {
+                    cells: [],
+                    labelColumn: "A",
+                    imageColumn: "B",
+                    dataRangeStart: "C",
+                    dataRangeEnd: "Z",
+                };
+            }
+            graphData.value.config.default.cells = value;
+        }
+    },
+});
 
 const graphId = computed(() => {
     const id = route.query.id;
@@ -62,6 +153,12 @@ const graphId = computed(() => {
 const { modified: hasChanges, resetInitial } = useModification(() => ({
     ...graphData.value?.config.data,
     ...graphData.value?.config.tickers,
+    valueSuffix: graphData.value?.config.default?.valueSuffix,
+    labelColumn: graphData.value?.config.default?.labelColumn,
+    imageColumn: graphData.value?.config.default?.imageColumn,
+    colorColumn: graphData.value?.config.default?.colorColumn,
+    dataRangeStart: graphData.value?.config.default?.dataRangeStart,
+    dataRangeEnd: graphData.value?.config.default?.dataRangeEnd,
 }));
 
 const debouncedSave = useDebounceFn(async () => {
@@ -71,7 +168,11 @@ const debouncedSave = useDebounceFn(async () => {
 }, 1500);
 
 watch(
-    [() => graphData.value?.config.animation, () => graphData.value?.name],
+    [
+        () => graphData.value?.config.animation,
+        () => graphData.value?.name,
+        () => graphData.value?.config.default?.cells,
+    ],
     async () => {
         if (!graphData.value) return;
 
