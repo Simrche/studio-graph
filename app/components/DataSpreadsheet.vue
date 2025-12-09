@@ -13,6 +13,20 @@
             </div>
             <div class="flex items-center gap-2">
                 <button
+                    @click="triggerFileInput"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-300 text-sm transition-colors"
+                >
+                    <PhUploadSimple :size="14" />
+                    Importer CSV/Excel
+                </button>
+                <input
+                    ref="fileInputRef"
+                    type="file"
+                    :accept="spreadsheetImportService.getAcceptedMimeTypes()"
+                    class="hidden"
+                    @change="handleFileImport"
+                />
+                <button
                     @click="addRows(100)"
                     class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-sm transition-colors"
                 >
@@ -188,7 +202,8 @@
 </template>
 
 <script setup lang="ts">
-import { PhPlus, PhArrowLineUp, PhArrowLineDown, PhArrowLineLeft, PhArrowLineRight, PhTrash, PhTextT } from "@phosphor-icons/vue";
+import { PhPlus, PhArrowLineUp, PhArrowLineDown, PhArrowLineLeft, PhArrowLineRight, PhTrash, PhTextT, PhUploadSimple } from "@phosphor-icons/vue";
+import { spreadsheetImportService } from "~/utils/spreadsheetImportService";
 import type { SpreadsheetCell } from "~/types";
 
 const props = defineProps<{
@@ -204,6 +219,7 @@ const cells = defineModel<SpreadsheetCell[]>({
 });
 
 const cellRefs = new Map<string, HTMLInputElement>();
+const fileInputRef = ref<HTMLInputElement | null>(null);
 
 // Configuration initiale
 const initialColumns = 26; // A-Z
@@ -404,4 +420,41 @@ onMounted(() => {
         rowCount.value = cells.value.length;
     }
 });
+
+// Import de fichiers
+function triggerFileInput() {
+    fileInputRef.value?.click();
+}
+
+async function handleFileImport(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    try {
+        const result = await spreadsheetImportService.importFile(file);
+
+        // Mettre à jour les cellules
+        cells.value = result.cells;
+
+        // Ajuster le nombre de lignes et colonnes si nécessaire
+        if (result.rowCount > rowCount.value) {
+            rowCount.value = Math.max(result.rowCount, initialRows);
+        }
+        if (result.columnCount > columnCount.value) {
+            columnCount.value = Math.max(result.columnCount, initialColumns);
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'import:", error);
+        alert(
+            error instanceof Error
+                ? error.message
+                : "Erreur lors de l'import du fichier"
+        );
+    } finally {
+        // Reset l'input pour permettre de réimporter le même fichier
+        input.value = "";
+    }
+}
 </script>
