@@ -19,7 +19,11 @@
                     </div>
                     <div class="flex flex-col gap-2">
                         <h3 class="text-xl font-semibold text-slate-700">
-                            {{ type === 'default' ? 'Aucune donnée' : 'Aucun ticker sélectionné' }}
+                            {{
+                                type === "default"
+                                    ? "Aucune donnée"
+                                    : "Aucun ticker sélectionné"
+                            }}
                         </h3>
                         <p
                             class="text-slate-500 max-w-md"
@@ -29,9 +33,10 @@
                                 align-items: center;
                             "
                         >
-                            {{ type === 'default'
-                                ? 'Remplissez le spreadsheet avec vos données pour visualiser le graphique'
-                                : 'Ajoutez des tickers dans la barre latérale pour commencer à visualiser les données'
+                            {{
+                                type === "default"
+                                    ? "Remplissez le spreadsheet avec vos données pour visualiser le graphique"
+                                    : "Ajoutez des tickers dans la barre latérale pour commencer à visualiser les données"
                             }}
                         </p>
                     </div>
@@ -169,7 +174,11 @@ const hasData = computed(() => {
             for (let i = startIndex; i <= endIndex; i++) {
                 const colName = getColumnName(i);
                 const value = row[colName];
-                if (value !== undefined && value !== null && String(value).trim() !== "") {
+                if (
+                    value !== undefined &&
+                    value !== null &&
+                    String(value).trim() !== ""
+                ) {
                     return true;
                 }
             }
@@ -403,6 +412,7 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     width: 100%;
+    max-width: 100%;
     background: white;
     border-radius: 1rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -414,6 +424,12 @@ onUnmounted(() => {
     background: #f8fafc;
     width: 100%;
     max-width: 100%;
+    max-height: calc(100vh - 200px);
+}
+
+.canvas-wrapper:not(.mobile-mode) {
+    max-width: min(100%, calc((100vh - 200px) * 16 / 9));
+    margin: 0 auto;
 }
 
 .canvas-wrapper.mobile-mode {
