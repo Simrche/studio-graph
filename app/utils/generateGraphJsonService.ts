@@ -50,7 +50,7 @@ class GenerateGraphJsonService {
                 return {
                     symbol: ticker.symbol,
                     name: ticker.name,
-                    logoUrl: ticker.logoUrl || "",
+                    logoUrl: ticker.customImageUrl || ticker.logoUrl || "",
                     color: ticker.color,
                     data: interpolatedData,
                 };

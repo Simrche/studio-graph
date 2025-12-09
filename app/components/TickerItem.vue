@@ -2,28 +2,14 @@
     <div
         class="group relative flex items-center gap-3.5 overflow-hidden rounded-xl border border-purple-500/10 bg-white/[0.03] p-3.5 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-br before:from-purple-500/5 before:to-pink-500/5 before:opacity-0 before:transition-opacity before:duration-300 hover:border-purple-500/30 hover:bg-white/[0.08] hover:shadow-[0_4px_12px_rgba(168,85,247,0.15)] hover:before:opacity-100"
     >
-        <div
-            class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
-        >
-            <img
-                v-if="ticker.logoUrl && !logoError"
-                :src="ticker.logoUrl"
-                :alt="ticker.symbol"
-                class="h-full w-full object-contain p-1"
-                @error="logoError = true"
-            />
-            <div
-                v-else
-                class="flex h-full w-full items-center justify-center"
-                :style="{ backgroundColor: ticker.color }"
-            >
-                <span
-                    class="flex h-full w-full items-center justify-center text-sm font-bold tracking-wide text-white"
-                >
-                    {{ ticker.symbol?.substring(0, 2).toUpperCase() }}
-                </span>
-            </div>
-        </div>
+        <TickerImageUploader
+            :image-url="displayImageUrl"
+            :pending-image="ticker.pendingImage"
+            :symbol="ticker.symbol"
+            :fallback-color="ticker.color"
+            @update:pending-image="handlePendingImageUpdate"
+            @remove-custom-image="handleRemoveCustomImage"
+        />
         <div class="relative z-[1] min-w-0 flex-1">
             <div
                 class="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-bold tracking-wide text-white cursor-default select-none"
@@ -63,7 +49,19 @@ defineEmits<{
     remove: [];
 }>();
 
-const logoError = ref(false);
+// URL à afficher: customImage > logoUrl
+const displayImageUrl = computed(() => {
+    return ticker.value.customImageUrl || ticker.value.logoUrl;
+});
+
+function handlePendingImageUpdate(file: File | null) {
+    ticker.value.pendingImage = file;
+}
+
+function handleRemoveCustomImage() {
+    ticker.value.customImageUrl = null;
+    ticker.value.pendingImage = null;
+}
 
 function handleFocus() {
     // Optionnel: logique lors du focus

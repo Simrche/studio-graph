@@ -82,4 +82,8 @@ export interface TickerData {
     name: string;
     color: string;
     logoUrl: string | null;
+    /** Image personnalisée en attente d'upload (avant "Appliquer") */
+    pendingImage?: File | null;
+    /** URL de l'image personnalisée uploadée sur le bucket */
+    customImageUrl?: string | null;
 }

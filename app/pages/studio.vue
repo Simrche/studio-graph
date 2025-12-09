@@ -114,6 +114,7 @@ import { useDebounceFn } from "@vueuse/core";
 const supabase = useSupabaseClient<any>();
 const route = useRoute();
 const { createPreview, deletePreview } = useGraphPreview();
+const { uploadPendingImages } = useTickerImage();
 
 const graphRef = ref<{
     reload: () => Promise<void>;
@@ -232,6 +233,14 @@ async function handleApply() {
     const oldPreviewUrl = graphData.value.preview_url;
 
     try {
+        // Upload les images de tickers en attente (mode stocks)
+        if (graphData.value.type === "stocks") {
+            const updatedTickers = await uploadPendingImages(
+                graphData.value.config.tickers
+            );
+            graphData.value.config.tickers = updatedTickers;
+        }
+
         // Créer la nouvelle preview (sans supprimer l'ancienne)
         const newPreviewUrl = await createPreview(
             graphData.value.config,
